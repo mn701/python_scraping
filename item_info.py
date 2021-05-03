@@ -16,6 +16,7 @@ def getItemInfo(url):
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text()
         details = bsObj.find("div", {"class":"js-product-details_val"}).get_text()
+        color = bsObj.find("div", {"class":{"selected-color"}}).get_text()
 
         for img in bsObj.findAll("img", {"itemprop":"image"}):
             imglocation = img['src']
@@ -27,6 +28,8 @@ def getItemInfo(url):
         'sku: ' + sku + '\n' +
         'price: ' + price + '\n' +
         'description: ' + description + '\n' +
-        'details: ' + details)
-
-getItemInfo("https://www.pedroshoes.com/sg/women/PW2-75060043_GREEN.html")
+        'details: ' + details+ '\n' +
+        'color: ' + color)
+print("Enter your url:")
+url = input()
+getItemInfo(url)
