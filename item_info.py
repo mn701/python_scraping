@@ -12,7 +12,11 @@ def getItemInfo(url):
     try:
         bsObj = BeautifulSoup(html, 'lxml')
         title = bsObj.h1.string
-        sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
+
+        if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
+            sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
+        elif len(bsObj.findAll("span", {"class":{"product-id"}})) > 0:
+            sku = bsObj.find("span", {"class":{"product-id"}}).get_text()
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text()
         details = bsObj.find("div", {"class":"js-product-details_val"}).get_text()
