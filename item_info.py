@@ -1,6 +1,9 @@
 from urllib.request import urlopen
 from urllib.error import HTTPError
 from bs4 import BeautifulSoup
+from urllib.request import urlretrieve
+import re
+
 def getItemInfo(url):
     try:
         html = urlopen(url)
@@ -13,6 +16,11 @@ def getItemInfo(url):
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text()
         details = bsObj.find("div", {"class":"js-product-details_val"}).get_text()
+
+        for img in bsObj.findAll("img", {"itemprop":"image"}):
+            imglocation = img['src']
+            imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
+            urlretrieve(imglocation, imgname)
     except AttributeError as e:
         return None
     print('title: ' + title + '\n' +
