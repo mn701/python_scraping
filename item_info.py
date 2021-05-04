@@ -3,6 +3,7 @@ from urllib.error import HTTPError
 from bs4 import BeautifulSoup
 from urllib.request import urlretrieve
 import re
+import os
 
 def getItemInfo(url):
     try:
@@ -23,13 +24,20 @@ def getItemInfo(url):
         print_item(sku_short, url, title, price, description, details)
         pritn_variant(sku, url, color)
 
+        # Creating a folder using sku
+        folderName = sku_short
+        currPath = os.path.dirname(os.path.realpath(__file__))
+        reqPath = os.path.join(currPath,folderName)
+        if os.path.isdir(reqPath) == False:
+            os.mkdir(folderName)
+
         for img in bsObj.findAll("img", {"itemprop":"image"}):
             imglocation = img['src']
             imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
-            urlretrieve(imglocation, imgname)
+            filename = os.path.join(reqPath, imgname)
+            urlretrieve(imglocation, filename)
     except AttributeError as e:
         return None
-
 
 def print_item(product_id, url, product_name, price, description, details):
     print('product_id: '+ product_id + '\n' +
