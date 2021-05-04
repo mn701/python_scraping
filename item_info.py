@@ -12,15 +12,16 @@ def getItemInfo(url):
     try:
         bsObj = BeautifulSoup(html, 'lxml')
         title = bsObj.h1.string
-
-        if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
-            sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
-        elif len(bsObj.findAll("span", {"class":{"product-id"}})) > 0:
-            sku = bsObj.find("span", {"class":{"product-id"}}).get_text()
+        sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
-        description = bsObj.find("div", {"itemprop":{"description"}}).get_text()
-        details = bsObj.find("div", {"class":"js-product-details_val"}).get_text()
-        color = bsObj.find("div", {"class":{"selected-color"}}).get_text()
+        description = bsObj.find("div", {"itemprop":{"description"}}).get_text().strip()
+        details = bsObj.find("div", {"class":"js-product-details_val"}).get_text().strip()
+        color = bsObj.find("div", {"class":{"selected-color"}}).get_text().strip()
+
+        sku_short = re.findall("\w+\d-\d+", sku)[0]
+
+        print_item(sku_short, url, title, price, description, details)
+        pritn_variant(sku, url, color)
 
         for img in bsObj.findAll("img", {"itemprop":"image"}):
             imglocation = img['src']
@@ -28,12 +29,20 @@ def getItemInfo(url):
             urlretrieve(imglocation, imgname)
     except AttributeError as e:
         return None
-    print('title: ' + title + '\n' +
-        'sku: ' + sku + '\n' +
+
+
+def print_item(product_id, url, product_name, price, description, details):
+    print('product_id: '+ product_id + '\n' +
+        'url: ' + url + '\n' +
+        'product name: ' + product_name + '\n' +
         'price: ' + price + '\n' +
         'description: ' + description + '\n' +
-        'details: ' + details+ '\n' +
-        'color: ' + color)
+        'details: ' + details+ '\n')
+def pritn_variant(sku, url, color):
+    print('variant sku: '+ sku + '\n' +
+    'variant url: ' + url + '\n' +
+    'color: ' + color)
+
 print("Enter your url:")
 url = input()
 getItemInfo(url)
