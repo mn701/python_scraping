@@ -73,7 +73,7 @@ def store_variation(item_id, sku, url):
         cur.execute("INSERT INTO Variations (item_id, sku, url, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "', 1)")
         cur.connection.commit()
     else:
-        print("Item already exist!")
+        print("Item already exists!")
 
 print("Enter your url:")
 url = input()
