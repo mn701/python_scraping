@@ -7,7 +7,7 @@ import os
 import pymysql
 
 # Connect MySQL
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd='wawa1234', db='mysql', charset='utf8')
+conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=None, db='mysql', charset='utf8')
 cur = conn.cursor()
 cur.execute("USE shop")
 
