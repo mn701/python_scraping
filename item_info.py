@@ -28,9 +28,6 @@ def getItemInfo(url):
         sku_short = re.findall("\w+\d-\d+", sku)[0]
         brand_id = '2'
 
-        # print_item(sku_short, url, title, price, description, details)
-        # print_variation(sku, url, color)
-
         try:
             store_item(brand_id, sku_short, url, title, price, description, details)
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
@@ -59,19 +56,6 @@ def save_imgs(images, folderName):
         imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
-
-def print_item(product_id, url, product_name, price, description, details):
-    print('product_id: '+ product_id + '\n' +
-        'url: ' + url + '\n' +
-        'product name: ' + product_name + '\n' +
-        'price: ' + price + '\n' +
-        'description: ' + description + '\n' +
-        'details: ' + details+ '\n')
-
-def print_variation(sku, url, color):
-    print('variant sku: '+ sku + '\n' +
-    'variant url: ' + url + '\n' +
-    'color: ' + color)
 
 # Storing item info into  MySQL database
 def store_item(brand_id, serial, url, item_name, price, description, details):
