@@ -45,20 +45,24 @@ def getItemInfo(url):
         else:
             original_price = price
 
+        # img tags
+        arr_img = bsObj.findAll("img", {"itemprop":"image"})
+        season = get_season(arr_img)
+        color_code = get_color_code(arr_img)
+
         brand_id = '2'
 
         try:
-            store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details)
+            store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
             if(cur.rowcount > 0):
                 item_id = cur.fetchone()[0]
-                store_variation(str(item_id), sku, url)
+                store_variation(str(item_id), sku, url, color_code)
         finally:
             cur.close()
             conn.close()
 
-        arr_img = bsObj.findAll("img", {"itemprop":"image"})
-        # Creating a folder using sku
+
         foldername = sku_short
         save_imgs(arr_img, foldername)
     except AttributeError as e:
@@ -70,6 +74,9 @@ def save_imgs(images, folderName):
     reqPath = os.path.join(currPath,folderName)
     if os.path.isdir(reqPath) == False:
         os.mkdir(folderName)
+
+    color_code = 'none'
+    season = 'none'
     for img in images:
         if img.has_attr('data-src'):
             imglocation = img['data-src']
@@ -79,20 +86,38 @@ def save_imgs(images, folderName):
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
 
+def get_season(images):
+    firstimg = images[0]
+    if firstimg.has_attr('data-src'):
+        imglocation = firstimg['data-src']
+    else:
+        imglocation = firstimg['src']
+    imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
+    return imgname[0:7]
+
+def get_color_code(images):
+    firstimg = images[0]
+    if firstimg.has_attr('data-src'):
+        imglocation = firstimg['data-src']
+    else:
+        fimglocation = firstimg['src']
+    imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
+    return re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
+
 # Storing item info into  MySQL database
-def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details):
+def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season):
     cur.execute("SELECT * FROM Items WHERE serial='" + serial + "'")
     exist = cur.fetchone()
     if exist is None:
-        cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "','" + description + "','" + details + "')")
+        cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "','" + description + "','" + details + "','" + season + "')")
         cur.connection.commit()
 
 # Storing items' Variation into Variations table
-def store_variation(item_id, sku, url):
+def store_variation(item_id, sku, url, color_code):
     cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
     exist = cur.fetchone()
     if exist is None:
-        cur.execute("INSERT INTO Variations (item_id, sku, url, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "', 1)")
+        cur.execute("INSERT INTO Variations (item_id, sku, url, color_code, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "', 1)")
         cur.connection.commit()
     else:
         print("Item already exists!")
