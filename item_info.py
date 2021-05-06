@@ -18,12 +18,16 @@ def getItemInfo(url):
         return None
     try:
         bsObj = BeautifulSoup(html, 'lxml')
-        sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
         title = bsObj.h1.string
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text().strip()
         details = bsObj.find("div", {"class":"js-product-details_val"}).get_text().strip()
         color = bsObj.find("div", {"class":{"selected-color"}}).get_text().strip()
+
+        if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
+            sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
+        elif len(bsObj.findAll("span", {"class":{"product-id"}})) > 0:
+            sku = bsObj.find("span", {"class":{"product-id"}}).get_text()
 
         sku_short = re.findall("\w+\d-\d+", sku)[0]
         brand_id = '2'
@@ -52,7 +56,10 @@ def save_imgs(images, folderName):
     if os.path.isdir(reqPath) == False:
         os.mkdir(folderName)
     for img in images:
-        imglocation = img['src']
+        if img.has_attr('data-src'):
+            imglocation = img['data-src']
+        else:
+            imglocation = img['src']
         imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
