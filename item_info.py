@@ -30,10 +30,25 @@ def getItemInfo(url):
             sku = bsObj.find("span", {"class":{"product-id"}}).get_text()
 
         sku_short = re.findall("\w+\d-\d+", sku)[0]
+
+        discounted = bsObj.find("div", {"class":"discount_percentage"})
+        if discounted:
+            sale_info = discounted.string.strip()
+        else:
+            sale_info = ""
+
+        strike_through = bsObj.find("span", {"class":"strike-through"})
+        if strike_through:
+            striked = strike_through.find("span", {"class":"value"}).string
+            if len(striked) > 0:
+                original_price = re.sub(r'[^0-9.-]+', '', striked)
+        else:
+            original_price = price
+
         brand_id = '2'
 
         try:
-            store_item(brand_id, sku_short, url, title, price, description, details)
+            store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details)
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
             if(cur.rowcount > 0):
                 item_id = cur.fetchone()[0]
@@ -65,11 +80,11 @@ def save_imgs(images, folderName):
         urlretrieve(imglocation, filename)
 
 # Storing item info into  MySQL database
-def store_item(brand_id, serial, url, item_name, price, description, details):
+def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details):
     cur.execute("SELECT * FROM Items WHERE serial='" + serial + "'")
     exist = cur.fetchone()
     if exist is None:
-        cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, description, details) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + description + "','" + details + "')")
+        cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "','" + description + "','" + details + "')")
         cur.connection.commit()
 
 # Storing items' Variation into Variations table
