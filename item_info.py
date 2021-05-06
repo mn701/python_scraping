@@ -47,8 +47,11 @@ def getItemInfo(url):
 
         # img tags
         arr_img = bsObj.findAll("img", {"itemprop":"image"})
-        season = get_season(arr_img)
-        color_code = get_color_code(arr_img)
+
+        firstimg = arr_img[0]
+        imgname = get_imgname(firstimg)
+        season = imgname[0:7]
+        color_code =  re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
 
         brand_id = '2'
 
@@ -62,9 +65,7 @@ def getItemInfo(url):
             cur.close()
             conn.close()
 
-
-        foldername = sku_short
-        save_imgs(arr_img, foldername)
+        save_imgs(arr_img, sku_short)
     except AttributeError as e:
         return None
 
@@ -78,31 +79,21 @@ def save_imgs(images, folderName):
     color_code = 'none'
     season = 'none'
     for img in images:
-        if img.has_attr('data-src'):
-            imglocation = img['data-src']
-        else:
-            imglocation = img['src']
-        imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
+        imglocation = get_imglocation(img)
+        imgname = get_imgname(img)
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
 
-def get_season(images):
-    firstimg = images[0]
-    if firstimg.has_attr('data-src'):
-        imglocation = firstimg['data-src']
+def get_imglocation(img):
+    if img.has_attr('data-src'):
+        imglocation = img['data-src']
     else:
-        imglocation = firstimg['src']
-    imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
-    return imgname[0:7]
+        imglocation = img['src']
+    return imglocation
 
-def get_color_code(images):
-    firstimg = images[0]
-    if firstimg.has_attr('data-src'):
-        imglocation = firstimg['data-src']
-    else:
-        imglocation = firstimg['src']
-    imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
-    return re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
+def get_imgname(img):
+    imglocation = get_imglocation(img)
+    return re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
 
 # Storing item info into  MySQL database
 def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season):
