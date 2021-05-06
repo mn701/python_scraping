@@ -100,7 +100,7 @@ def get_color_code(images):
     if firstimg.has_attr('data-src'):
         imglocation = firstimg['data-src']
     else:
-        fimglocation = firstimg['src']
+        imglocation = firstimg['src']
     imgname= re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
     return re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
 
