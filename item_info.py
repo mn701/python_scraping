@@ -23,6 +23,7 @@ def getItemInfo(url, brand_id):
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text().strip()
         details = bsObj.find("div", {"class":"js-product-details_val"}).get_text().strip()
         color = bsObj.find("div", {"class":{"selected-color"}}).get_text().strip()
+        size = bsObj.find("div", {"class":{"selected-size"}}).get_text().strip()
 
         if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
             sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
@@ -61,7 +62,7 @@ def getItemInfo(url, brand_id):
                 cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
                 if(cur.rowcount > 0):
                     item_id = cur.fetchone()[0]
-                    store_variation(str(item_id), sku, url, color_code)
+                    store_variation(str(item_id), sku, url, color_code, size)
                 save_imgs(arr_img, sku_short)
             else:
                 print("Item already exists!")
@@ -107,8 +108,8 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
         cur.connection.commit()
 
 # Storing item variation into Variations table
-def store_variation(item_id, sku, url, color_code):
-    cur.execute("INSERT INTO Variations (item_id, sku, url, color_code, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "', 1)")
+def store_variation(item_id, sku, url, color_code, size_name):
+    cur.execute("INSERT INTO Variations (item_id, sku, url, color_code, size_name, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "', 1)")
     cur.connection.commit()
 
 print("Enter your url:")
