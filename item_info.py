@@ -5,6 +5,7 @@ from urllib.request import urlretrieve
 import re
 import os
 import pymysql
+import webbrowser
 
 # Connect MySQL
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=None, db='mysql', charset='utf8')
@@ -69,6 +70,11 @@ def getItemInfo(url, brand_id):
         finally:
             cur.close()
             conn.close()
+
+        # opening URL in chrome browser
+        chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
+        url = "https://www.buyma.com/r/-F1/" + sku_short
+        webbrowser.get(chrome_path).open(url)
 
     except AttributeError as e:
         return None
