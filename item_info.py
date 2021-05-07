@@ -64,6 +64,7 @@ def getItemInfo(url, brand_id):
                 if(cur.rowcount > 0):
                     item_id = cur.fetchone()[0]
                     store_variation(str(item_id), sku, url, color_code, size)
+                    fetch_other_buyers(str(item_id), sku_short)
                 save_imgs(arr_img, sku_short)
             else:
                 print("Item already exists!")
@@ -75,6 +76,8 @@ def getItemInfo(url, brand_id):
         chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
         url = "https://www.buyma.com/r/-F1/" + sku_short
         webbrowser.get(chrome_path).open(url)
+
+
 
     except AttributeError as e:
         return None
@@ -116,6 +119,24 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name):
     cur.execute("INSERT INTO Variations (item_id, sku, url, color_code, size_name, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "', 1)")
+    cur.connection.commit()
+
+# crawl Buyma and get info about the same product from other buyers
+def fetch_other_buyers(item_id, serial):
+    url = "https://www.buyma.com/r/-F1/" + serial
+    html = urlopen(url)
+    bsObj = BeautifulSoup(html, 'lxml')
+
+    divs = bsObj.findAll('div', {'class': 'product_body'})
+    for div in divs:
+        div_product_name = div.find('div', {'class': 'product_name'})
+        buyer_item = div_product_name.find('a')['href']
+        buyer_price = div_product_name.find('a')['price']
+        buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
+        store_buyer_price(item_id, buyer_name, buyer_price, buyer_item)
+
+def store_buyer_price(item_id, buyer, price, url):
+    cur.execute("INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')")
     cur.connection.commit()
 
 print("Enter your url:")
