@@ -11,7 +11,7 @@ conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='ro
 cur = conn.cursor()
 cur.execute("USE shop")
 
-def getItemInfo(url):
+def getItemInfo(url, brand_id):
     try:
         html = urlopen(url)
     except HTTPError as e:
@@ -53,19 +53,22 @@ def getItemInfo(url):
         season = imgname[0:7]
         color_code =  re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
 
-        brand_id = '2'
-
         try:
-            store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
-            cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
-            if(cur.rowcount > 0):
-                item_id = cur.fetchone()[0]
-                store_variation(str(item_id), sku, url, color_code)
+            cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
+            exist = cur.fetchone()
+            if exist is None:
+                store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+                cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
+                if(cur.rowcount > 0):
+                    item_id = cur.fetchone()[0]
+                    store_variation(str(item_id), sku, url, color_code)
+                save_imgs(arr_img, sku_short)
+            else:
+                print("Item already exists!")
         finally:
             cur.close()
             conn.close()
 
-        save_imgs(arr_img, sku_short)
     except AttributeError as e:
         return None
 
@@ -103,16 +106,13 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
         cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "','" + description + "','" + details + "','" + season + "')")
         cur.connection.commit()
 
-# Storing items' Variation into Variations table
+# Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code):
-    cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
-    exist = cur.fetchone()
-    if exist is None:
-        cur.execute("INSERT INTO Variations (item_id, sku, url, color_code, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "', 1)")
-        cur.connection.commit()
-    else:
-        print("Item already exists!")
+    cur.execute("INSERT INTO Variations (item_id, sku, url, color_code, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "', 1)")
+    cur.connection.commit()
 
 print("Enter your url:")
 url = input()
-getItemInfo(url)
+print("Enter brand ID: ")
+brand = input()
+getItemInfo(url, brand)
