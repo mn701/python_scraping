@@ -71,7 +71,7 @@ def getItemInfo(url, brand_id):
                     fetch_other_buyers(str(item_id), sku_short)
                 save_imgs(arr_img, sku_short)
             else:
-                print("Item already exists!")
+                logging.info('%s already exists!', sku)
         finally:
             cur.close()
             conn.close()
@@ -117,8 +117,14 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
     if exist is None:
         description = description.replace("'", "''")
         details = details.replace("'", "''")
-        cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "', '" + description + "', '" + details + "','" + season + "')")
-        cur.connection.commit()
+        sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "', '" + description + "', '" + details + "','" + season + "')"
+        try:
+            affected_count = cur.execute(sql)
+            cur.connect.commit()
+            logging.warning("%d", affected_count)
+            logging.info("inserted item: %s", serial)
+        except MySQLdb.IntegrityError:
+            logging.warn("failed to insert item: %s", serial)
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name):
