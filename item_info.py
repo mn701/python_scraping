@@ -118,22 +118,22 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
         description = description.replace("'", "''")
         details = details.replace("'", "''")
         sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "', '" + description + "', '" + details + "','" + season + "')"
-        execute_sql(sql, serial)
+        execute_sql(sql, 'item', serial)
 
 # execute insert-into and log result
-def execute_sql(sql, key):
+def execute_sql(sql, category, key):
     try:
         affected_count = cur.execute(sql)
         cur.connection.commit()
         logging.warning("%d", affected_count)
-        logging.info("inserted %s", key)
+        logging.info("inserted %s: %s", category, key)
     except MySQLdb.IntegrityError:
-        logging.warn("failed to insert %s", key)
+        logging.warn("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name):
-    cur.execute("INSERT INTO Variations (item_id, sku, url, color_code, size_name, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "', 1)")
-    cur.connection.commit()
+    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "', 1)"
+    execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
 def fetch_other_buyers(item_id, serial):
@@ -150,8 +150,8 @@ def fetch_other_buyers(item_id, serial):
         store_buyer_price(item_id, buyer_name, buyer_price, buyer_item)
 
 def store_buyer_price(item_id, buyer, price, url):
-    cur.execute("INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')")
-    cur.connection.commit()
+    sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
+    execute_sql(sql, 'buyer_price', url)
 
 print("Enter your url:")
 url = input()
