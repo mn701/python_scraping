@@ -118,13 +118,17 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
         description = description.replace("'", "''")
         details = details.replace("'", "''")
         sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "', '" + description + "', '" + details + "','" + season + "')"
-        try:
-            affected_count = cur.execute(sql)
-            cur.connect.commit()
-            logging.warning("%d", affected_count)
-            logging.info("inserted item: %s", serial)
-        except MySQLdb.IntegrityError:
-            logging.warn("failed to insert item: %s", serial)
+        execute_sql(sql, serial)
+
+# execute insert-into and log result
+def execute_sql(sql, key):
+    try:
+        affected_count = cur.execute(sql)
+        cur.connection.commit()
+        logging.warning("%d", affected_count)
+        logging.info("inserted %s", key)
+    except MySQLdb.IntegrityError:
+        logging.warn("failed to insert %s", key)
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name):
