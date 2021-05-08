@@ -113,7 +113,9 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
     cur.execute("SELECT * FROM Items WHERE serial='" + serial + "'")
     exist = cur.fetchone()
     if exist is None:
-        cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "','" + description + "','" + details + "','" + season + "')")
+        description = description.replace("'", "''")
+        details = details.replace("'", "''")
+        cur.execute("INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "', '" + description + "', '" + details + "','" + season + "')")
         cur.connection.commit()
 
 # Storing item variation into Variations table
