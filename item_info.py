@@ -148,7 +148,7 @@ def fetch_other_buyers(item_id, serial):
             buyer_price = div_product_name.find('a')['price']
             buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
 
-            cur.execute("SELECT * FROM Buyer_price WHERE item_id ='" + item_id + "' AND buyer_name = " + buyer_name + "'")
+            cur.execute("SELECT * FROM Buyer_price WHERE url ='" + buyer_item + "'")
             exist = cur.fetchone()
             if exist is None:
                 store_buyer_price(item_id, buyer_name, buyer_price, buyer_item)
@@ -165,23 +165,24 @@ def get_items_from_list(lst, brand_id):
         cur.close()
         conn.close()
 
-# html = urlopen("https://www.pedroshoes.com/sg/women/bags")
-# bsObj = BeautifulSoup(html, 'lxml')
-# base = "https://www.pedroshoes.com"
-# new_urls = list()
-# for div in bsObj.find_all(class_='active'):
-#     a = div.find('a', {"class":"full-pdp-link"})
-#     new_urls.append(base + a['href'])
+html = urlopen("https://www.pedroshoes.com/sg/women/bags")
+bsObj = BeautifulSoup(html, 'lxml')
+base = "https://www.pedroshoes.com"
+new_urls = list()
+for div in bsObj.find_all(class_='active'):
+    a = div.find('a', {"class":"full-pdp-link"})
+    new_urls.append(base + a['href'])
+
+get_items_from_list(new_urls, "2")
+
+# input_list = []
+# try:
+#     url = input("Enter url (enter 0 to end): ")
+#     while url != "0":
+#         input_list.append(url)
+#         url = input("Enter url (enter 0 to end): ")
+#     brand_id = input("Enter brand ID: ")
+# except:
+#   print(input_list)
 #
-# get_items_from_list(new_urls, "2")
-
-try:
-    input_list = []
-    url = input("Enter url (enter 0 to end): ")
-    while url != 0:
-        url = input("Enter url (enter 0 to end): ")
-        input_list.append(url)
-    brand_id = input("Enter brand ID: ")
-
-except:
-    get_items_from_list(input_list, brand_id)
+# get_items_from_list(input_list, brand_id)
