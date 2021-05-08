@@ -6,6 +6,10 @@ import re
 import os
 import pymysql
 import webbrowser
+import logging
+
+#logging
+logging.basicConfig(filename='item_info.log', level=logging.DEBUG)
 
 # Connect MySQL
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=None, db='mysql', charset='utf8')
