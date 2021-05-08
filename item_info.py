@@ -159,24 +159,29 @@ def store_buyer_price(item_id, buyer, price, url):
 
 def get_items_from_list(lst, brand_id):
     try:
-        for url in new_urls:
+        for url in lst:
             getItemInfo(url, brand_id)
     finally:
         cur.close()
         conn.close()
 
-# print("Enter your url:")
-# url = input()
-# print("Enter brand ID: ")
-# brand = input()
-# getItemInfo(url, brand)
+# html = urlopen("https://www.pedroshoes.com/sg/women/bags")
+# bsObj = BeautifulSoup(html, 'lxml')
+# base = "https://www.pedroshoes.com"
+# new_urls = list()
+# for div in bsObj.find_all(class_='active'):
+#     a = div.find('a', {"class":"full-pdp-link"})
+#     new_urls.append(base + a['href'])
+#
+# get_items_from_list(new_urls, "2")
 
-html = urlopen("https://www.pedroshoes.com/sg/women/bags")
-bsObj = BeautifulSoup(html, 'lxml')
-base = "https://www.pedroshoes.com"
-new_urls = list()
-for div in bsObj.find_all(class_='active'):
-    a = div.find('a', {"class":"full-pdp-link"})
-    new_urls.append(base + a['href'])
+try:
+    input_list = []
+    url = input("Enter url (enter 0 to end): ")
+    while url != 0:
+        url = input("Enter url (enter 0 to end): ")
+        input_list.append(url)
+    brand_id = input("Enter brand ID: ")
 
-get_items_from_list(new_urls, "2")
+except:
+    get_items_from_list(input_list, brand_id)
