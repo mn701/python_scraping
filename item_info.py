@@ -120,7 +120,7 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
 def execute_sql(sql, category, key):
     try:
         affected_count = cur.execute(sql)
-        cur.connection.commit()
+        conn.commit()
         # logging.warning("%d", affected_count)
         logging.info("inserted %s: %s", category, key)
     except MySQLdb.IntegrityError:
@@ -157,6 +157,14 @@ def store_buyer_price(item_id, buyer, price, url):
     sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
     execute_sql(sql, 'buyer_price', url)
 
+def get_items_from_list(lst, brand_id):
+    try:
+        for url in new_urls:
+            getItemInfo(url, brand_id)
+    finally:
+        cur.close()
+        conn.close()
+
 # print("Enter your url:")
 # url = input()
 # print("Enter brand ID: ")
@@ -166,10 +174,9 @@ def store_buyer_price(item_id, buyer, price, url):
 html = urlopen("https://www.pedroshoes.com/sg/women/bags")
 bsObj = BeautifulSoup(html, 'lxml')
 base = "https://www.pedroshoes.com"
+new_urls = list()
 for div in bsObj.find_all(class_='active'):
     a = div.find('a', {"class":"full-pdp-link"})
-    url = base + a['href']
-    getItemInfo(url, "2")
+    new_urls.append(base + a['href'])
 
-cur.close()
-conn.close()
+get_items_from_list(new_urls, "2")
