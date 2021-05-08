@@ -73,11 +73,9 @@ def getItemInfo(url, brand_id):
             conn.close()
 
         # opening URL in chrome browser
-        chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
-        url = "https://www.buyma.com/r/-F1/" + sku_short
-        webbrowser.get(chrome_path).open(url)
-
-
+        # chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
+        # url = "https://www.buyma.com/r/-F1/" + sku_short
+        # webbrowser.get(chrome_path).open(url)
 
     except AttributeError as e:
         return None
