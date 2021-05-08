@@ -59,22 +59,18 @@ def getItemInfo(url, brand_id):
         season = imgname[0:7]
         color_code =  re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
 
-        try:
-            cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
-            exist = cur.fetchone()
-            if exist is None:
-                store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
-                cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
-                if(cur.rowcount > 0):
-                    item_id = cur.fetchone()[0]
-                    store_variation(str(item_id), sku, url, color_code, size)
-                    fetch_other_buyers(str(item_id), sku_short)
-                save_imgs(arr_img, sku_short)
-            else:
-                logging.info('%s already exists!', sku)
-        finally:
-            cur.close()
-            conn.close()
+        cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
+        exist = cur.fetchone()
+        if exist is None:
+            store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+            cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
+            if(cur.rowcount > 0):
+                item_id = cur.fetchone()[0]
+                store_variation(str(item_id), sku, url, color_code, size)
+                fetch_other_buyers(str(item_id), sku_short)
+            save_imgs(arr_img, sku_short)
+        else:
+            logging.info('%s already exists!', sku)
 
         # opening URL in chrome browser
         # chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
@@ -153,8 +149,19 @@ def store_buyer_price(item_id, buyer, price, url):
     sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
     execute_sql(sql, 'buyer_price', url)
 
-print("Enter your url:")
-url = input()
-print("Enter brand ID: ")
-brand = input()
-getItemInfo(url, brand)
+# print("Enter your url:")
+# url = input()
+# print("Enter brand ID: ")
+# brand = input()
+# getItemInfo(url, brand)
+
+html = urlopen("https://www.pedroshoes.com/sg/women/bags")
+bsObj = BeautifulSoup(html, 'lxml')
+base = "https://www.pedroshoes.com"
+for div in bsObj.find_all(class_='active'):
+    a = div.find('a', {"class":"full-pdp-link"})
+    url = base + a['href']
+    getItemInfo(url, "2")
+
+cur.close()
+conn.close()
