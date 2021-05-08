@@ -133,17 +133,25 @@ def store_variation(item_id, sku, url, color_code, size_name):
 
 # crawl Buyma and get info about the same product from other buyers
 def fetch_other_buyers(item_id, serial):
-    url = "https://www.buyma.com/r/-F1/" + serial
-    html = urlopen(url)
-    bsObj = BeautifulSoup(html, 'lxml')
+    cur.execute("SELECT * FROM Buyer_price WHERE item_id ='" + item_id + "'")
+    exist = cur.fetchone()
+    if exist is None:
 
-    divs = bsObj.findAll('div', {'class': 'product_body'})
-    for div in divs:
-        div_product_name = div.find('div', {'class': 'product_name'})
-        buyer_item = div_product_name.find('a')['href']
-        buyer_price = div_product_name.find('a')['price']
-        buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
-        store_buyer_price(item_id, buyer_name, buyer_price, buyer_item)
+        url = "https://www.buyma.com/r/-F1/" + serial
+        html = urlopen(url)
+        bsObj = BeautifulSoup(html, 'lxml')
+
+        divs = bsObj.findAll('div', {'class': 'product_body'})
+        for div in divs:
+            div_product_name = div.find('div', {'class': 'product_name'})
+            buyer_item = div_product_name.find('a')['href']
+            buyer_price = div_product_name.find('a')['price']
+            buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
+
+            cur.execute("SELECT * FROM Buyer_price WHERE item_id ='" + item_id + "' AND buyer_name = " + buyer_name + "'")
+            exist = cur.fetchone()
+            if exist is None:
+                store_buyer_price(item_id, buyer_name, buyer_price, buyer_item)
 
 def store_buyer_price(item_id, buyer, price, url):
     sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
