@@ -125,10 +125,10 @@ def execute_sql(sql, category, key):
     try:
         affected_count = cur.execute(sql)
         cur.connection.commit()
-        logging.warning("%d", affected_count)
+        # logging.warning("%d", affected_count)
         logging.info("inserted %s: %s", category, key)
     except MySQLdb.IntegrityError:
-        logging.warn("failed to insert %s: %s", category, key)
+        logging.warning("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name):
