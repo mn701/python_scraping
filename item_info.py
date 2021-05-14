@@ -28,9 +28,12 @@ def getItemInfo(url, brand_id):
         title = bsObj.h1.string
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text().strip()
-        details = bsObj.find("div", {"class":"js-product-details_val"}).get_text().strip()
         color = bsObj.find("div", {"class":{"selected-color"}}).get_text().strip()
         size = bsObj.find("div", {"class":{"selected-size"}}).get_text().strip()
+
+        details = ''
+        for li in bsObj.find("div", {"class":"js-product-details_val"}).findAll("li"):
+            details += li.string + '\r\n'
 
         if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
             sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
