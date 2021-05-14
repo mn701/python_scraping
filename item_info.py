@@ -7,6 +7,7 @@ import os
 import pymysql
 import webbrowser
 import logging
+import math
 
 #logging
 logging.basicConfig(filename='item_info.log', level=logging.DEBUG)
@@ -165,15 +166,28 @@ def get_items_from_list(lst, brand_id):
         cur.close()
         conn.close()
 
+PEDRO_ID = '2'
+def get_pedro_urls(url):
+    html = urlopen(url)
+    bsObj = BeautifulSoup(html, 'lxml')
+    base = "https://www.pedroshoes.com"
+    new_urls = list()
+    for div in bsObj.find_all(class_='active'):
+        a = div.find('a', {"class":"full-pdp-link"})
+        new_urls.append(base + a['href'])
+
+    get_items_from_list(new_urls, PEDRO_ID)
+
+
 html = urlopen("https://www.pedroshoes.com/sg/women/bags")
 bsObj = BeautifulSoup(html, 'lxml')
-base = "https://www.pedroshoes.com"
-new_urls = list()
-for div in bsObj.find_all(class_='active'):
-    a = div.find('a', {"class":"full-pdp-link"})
-    new_urls.append(base + a['href'])
 
-get_items_from_list(new_urls, "2")
+res_cont_div = bsObj.find('div', {"class":"result-count"}).find('span').string.strip()
+res_cont = int(re.sub(r'[^0-9]+', '', res_cont_div))
+
+n = math.ceil(res_cont / 60)
+for i in range(n):
+    get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
 
 # input_list = []
 # try:
