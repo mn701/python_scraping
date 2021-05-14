@@ -159,12 +159,8 @@ def store_buyer_price(item_id, buyer, price, url):
     execute_sql(sql, 'buyer_price', url)
 
 def get_items_from_list(lst, brand_id):
-    try:
-        for url in lst:
-            getItemInfo(url, brand_id)
-    finally:
-        cur.close()
-        conn.close()
+    for url in lst:
+        getItemInfo(url, brand_id)
 
 PEDRO_ID = '2'
 def get_pedro_urls(url):
@@ -188,6 +184,9 @@ res_cont = int(re.sub(r'[^0-9]+', '', res_cont_div))
 n = math.ceil(res_cont / 60)
 for i in range(n):
     get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
+
+cur.close()
+conn.close()
 
 # input_list = []
 # try:
