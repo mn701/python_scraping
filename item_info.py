@@ -10,7 +10,8 @@ import logging
 import math
 
 #logging
-logging.basicConfig(filename='item_info.log', level=logging.DEBUG)
+log_format = '%(asctime)s %(filename)s: %(message)s'
+logging.basicConfig(filename='item_info.log', level=logging.DEBUG, format=log_format)
 
 # Connect MySQL
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=None, db='mysql', charset='utf8')
