@@ -1,7 +1,7 @@
 import os
 import shutil
 
-directory = "/Users/MN1/mycodes/images"
+directory = os.getcwd()
 for filename in os.scandir(directory):
     if os.path.isdir(filename):
         os.chdir(filename.path)
