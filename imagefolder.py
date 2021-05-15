@@ -50,7 +50,6 @@ def create_im_from_4(images):
 
 def add_shop_logo(image):
     # Adding logo image
-
     logo_im = Image.open(LOGO_FILENAME)
     logo_im = logo_im.resize((200, 200))
     logoWidth, logoHeight = logo_im.size
@@ -63,7 +62,6 @@ def add_shop_logo(image):
 
 def add_logo_center(image):
     # Adding logo image
-    LOGO_FILENAME = 'logo.png'
     logo_im = Image.open(LOGO_FILENAME)
     logo_im = logo_im.resize((200, 200))
     logoWidth, logoHeight = logo_im.size
