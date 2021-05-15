@@ -33,13 +33,13 @@ def createTop():
 # mask directory name
 directory = os.getcwd()
 for filename in os.scandir(directory):
-    if os.path.isdir(filename):
+    if os.path.isdir(filename) and 'PW' in str(filename):
         os.chdir(filename.path)
 
         if not os.path.exists('top'):
-            os.mkdir("top")
+            os.mkdir('top')
             for filename in os.listdir():
-                if filename.endswith("-1.jpg"):
-                    shutil.copy(filename, "top")
-        os.chdir("top")
+                if filename.endswith('-1.jpg'):
+                    shutil.copy(filename, 'top')
+        os.chdir('top')
         createTop()
