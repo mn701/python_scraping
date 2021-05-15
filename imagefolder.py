@@ -14,6 +14,7 @@ def create_top(images):
         new_im = add_logo_center(new_im)
     elif(len(images) > 1):
         new_im = create_im_2_ver(images)
+        new_im = add_logo_top(new_im)
     elif(len(images) > 0):
         new_im = create_im_1(images[0])
         new_im = add_logo_top(new_im)
@@ -52,21 +53,21 @@ def create_im_from_4(images):
     return new_im
 
 def create_im_2_ver(images):
-    X_CROP = 100
+    CROP_X_SIZE = 100
     new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
+    new_width = new_height = SQUARE_HALF
+    # Create a new folder to save resized images.
+    os.makedirs('vresized', exist_ok=True)
 
     # Create a list for two vertical images.
     resized_images = []
     for imgfile in images:
         copy_im = Image.open(imgfile).copy()
-        x, y = copy_im.size
-        crop_rectangle = (X_CROP, 0, int(x - 100), y)
-        cropped_im = copy_im.crop(crop_rectangle)
-        cropped_x, cropped_y = cropped_im.size
-        new_width  = SQUARE_HALF
-        new_height = int(SQUARE_HALF * cropped_y / cropped_x)
+        cropped_im = crop_x(copy_im, CROP_X_SIZE)
+        cropped_width, cropped_height = cropped_im.size
+        new_height = int(SQUARE_HALF * cropped_height / cropped_width)
         resized_im = cropped_im.resize((new_width, new_height))
-        resized_im.save('resized' + imgfile)
+        resized_im.save(os.path.join('vresized', imgfile))
         resized_images.append(resized_im)
 
     # Create a list of coordinates.
@@ -80,6 +81,12 @@ def create_im_2_ver(images):
         new_im.paste(im, coords[resized_images.index(im)])
 
     return new_im
+
+def crop_x(im, x_crop):
+    x, y = im.size
+    crop_rectangle = (x_crop, 0, int(x - x_crop), y)
+    cropped_im = im.crop(crop_rectangle)
+    return cropped_im
 
 def add_shop_logo(image):
     # Adding logo image
