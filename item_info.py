@@ -14,7 +14,8 @@ log_format = '%(asctime)s %(filename)s: %(message)s'
 logging.basicConfig(filename='item_info.log', level=logging.DEBUG, format=log_format)
 
 # Connect MySQL
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=None, db='mysql', charset='utf8')
+pw = os.environ.get('mysql_password')
+conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=pw, db='mysql', charset='utf8')
 cur = conn.cursor()
 cur.execute("USE shop")
 
