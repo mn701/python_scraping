@@ -8,35 +8,49 @@ LOGO_SHOP = 'logo_200x200.png'
 PEDRO_LOGO = 'logo.png'
 
 def create_top(images):
-    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
-    if(len(images) > 2 and len(images) < 5):
-        new_im = create_im_from_4(images)
-        new_im = add_logo_center(new_im)
-    elif(len(images) > 1):
-        new_im = create_im_2_ver(images)
-        new_im = add_logo_top(new_im)
-    elif(len(images) > 0):
-        new_im = create_im_1(images[0])
-        new_im = add_logo_top(new_im)
+    if len(images) == 4:
+        create_im_from_4(images, 100).save('100.png')
+        create_im_from_4(images, 150).save('150.png')
+        create_im_from_4(images, 200).save('200.png')
+    elif len(images) == 3:
+        create_im_3_ver(images, 100).save('100v.png')
+        create_im_3_ver(images, 200).save('200v.png')
+        create_im_3_hor(images, 100).save('100h.png')
+        create_im_3_hor(images, 200).save('200h.png')
+        create_im_3_hor(images, 250).save('250h.png')
+        create_im_3_hor(images, 300).save('300h.png')
+    elif len(images) == 2:
+        create_im_2_ver(images, 100).save('100v.png')
+        create_im_2_ver(images, 200).save('200v.png')
+        create_im_2_hor(images, 100).save('100h.png')
+        create_im_2_hor(images, 200).save('200h.png')
+        create_im_2_hor(images, 250).save('250h.png')
+    elif len(images) == 1:
+        create_im_1(images[0], 0).save('0.png')
+        create_im_1(images[0], 50).save('50.png')
+        create_im_1(images[0], 100).save('100.png')
 
-    im_with_logo = add_shop_logo(new_im)
-    im_with_logo.save('with_logo.png')
-
-def create_im_1(image):
+def create_im_1(image, crop_size=0):
     copy_im = Image.open(image).copy()
-    crop_rectangle = (0, 192, 1152, 1344)
+    crop_rectangle = (0 + crop_size, 192 + crop_size, 1152 - crop_size, 1344 - crop_size)
     cropped_im = copy_im.crop(crop_rectangle)
     resized = cropped_im.resize((SQUARE_SIZE, SQUARE_SIZE))
-    return resized
 
-def create_im_from_4(images):
+    # Add logo at center
+    new_im = add_logo_top(resized)
+
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
+
+def create_im_from_4(images, crop_size=0):
     new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
     # Create a list for quaretersized images.
     quarter_images = []
     for imgfile in images:
         copy_im = Image.open(imgfile).copy()
-        crop_rectangle = (0, 192, 1152, 1344)
-        cropped_im = copy_im.crop(crop_rectangle)
+        cropped_im = crop_bottom_square(copy_im, crop_size)
         quartersized_im = cropped_im.resize((SQUARE_HALF, SQUARE_HALF))
         quarter_images.append(quartersized_im)
 
@@ -50,25 +64,23 @@ def create_im_from_4(images):
     for quarter_im in quarter_images:
         new_im.paste(quarter_im, coords[quarter_images.index(quarter_im)])
 
-    return new_im
+    # Add logo at center
+    new_im = add_logo_center(new_im)
 
-def create_im_2_ver(images):
-    CROP_X_SIZE = 100
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
+
+def create_im_2_ver(images, crop_x_size=100):
     new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
-    new_width = new_height = SQUARE_HALF
+    new_width = SQUARE_HALF
     # Create a new folder to save resized images.
     os.makedirs('vresized', exist_ok=True)
 
     # Create a list for two vertical images.
-    resized_images = []
-    for imgfile in images:
-        copy_im = Image.open(imgfile).copy()
-        cropped_im = crop_x(copy_im, CROP_X_SIZE)
-        cropped_width, cropped_height = cropped_im.size
-        new_height = int(SQUARE_HALF * cropped_height / cropped_width)
-        resized_im = cropped_im.resize((new_width, new_height))
-        resized_im.save(os.path.join('vresized', imgfile))
-        resized_images.append(resized_im)
+    resized_images = get_resized_images_v(images, crop_x_size, new_width)
+    new_height = resized_images[0].size[1]
 
     # Create a list of coordinates.
     coords = []
@@ -80,12 +92,149 @@ def create_im_2_ver(images):
     for im in resized_images:
         new_im.paste(im, coords[resized_images.index(im)])
 
-    return new_im
+    # Add logo at center
+    new_im = add_logo_top(new_im)
+
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
+
+def create_im_3_ver(images, crop_x_size=100):
+    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
+    new_width = int(SQUARE_SIZE / 3)
+    # Create a new folder to save resized images.
+    os.makedirs('vresized', exist_ok=True)
+
+    # Create a list for 3 vertical images.
+    resized_images = get_resized_images_v(images, crop_x_size, new_width)
+    new_height = resized_images[0].size[1]
+
+    # Create a list of coordinates.
+    coords = []
+    for left in [0, new_width, int(new_width * 2)]:
+        top = SQUARE_HALF - int(new_height / 2)
+        coords.append((left, top))
+
+    # Paste each quartersized image to new_im
+    for im in resized_images:
+        new_im.paste(im, coords[resized_images.index(im)])
+
+    # Add logo at top
+    new_im = add_logo_top(new_im)
+
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
+
+def create_im_2_hor(images, crop_y_size=100):
+    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
+    new_height = SQUARE_HALF
+    # Create a new folder to save resized images.
+    os.makedirs('hresized', exist_ok=True)
+
+    # Create a list for two horizontal images.
+    resized_images = get_resized_images_h(images, crop_y_size, new_height)
+    new_width = resized_images[0].size[0]
+
+    # Create a list of coordinates.
+    coords = []
+    for top in [0, SQUARE_HALF]:
+        left = SQUARE_HALF - int(new_width / 2)
+        coords.append((left, top))
+
+    # Paste each quartersized image to new_im
+    for im in resized_images:
+        new_im.paste(im, coords[resized_images.index(im)])
+
+    # Add logo at center
+    new_im = add_logo_center(new_im)
+
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
+
+def create_im_3_hor(images, crop_y_size=100):
+    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
+    new_height = int(SQUARE_SIZE / 3)
+    # Create a new folder to save resized images.
+    os.makedirs('hresized', exist_ok=True)
+
+    # Create a list for three horizontal images.
+    resized_images = get_resized_images_h(images, crop_y_size, new_height)
+    new_width = resized_images[0].size[0]
+
+    # Create a list of coordinates.
+    coords = []
+    for top in [0, new_height, int(new_height * 2)]:
+        left = SQUARE_SIZE - new_width
+        coords.append((left, top))
+
+    # Paste each quartersized image to new_im
+    for im in resized_images:
+        new_im.paste(im, coords[resized_images.index(im)])
+
+    # Add logo on the left
+    new_im = add_logo_left(new_im)
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
+
+def get_resized_images_v(images, crop_x_size, new_width):
+    resized_images = []
+    for imgfile in images:
+        copy_im = Image.open(imgfile).copy()
+        cropped_im = crop_x(copy_im, crop_x_size)
+        cropped_width, cropped_height = cropped_im.size
+        new_height = int(new_width * cropped_height / cropped_width)
+        resized_im = cropped_im.resize((new_width, new_height))
+        resized_im.save(os.path.join('vresized', imgfile))
+        resized_images.append(resized_im)
+    return resized_images
+
+def get_resized_images_h(images, crop_y_size, new_height):
+    resized_images = []
+    for imgfile in images:
+        copy_im = Image.open(imgfile).copy()
+        cropped_im = crop_y_bottom(copy_im, crop_y_size)
+        cropped_width, cropped_height = cropped_im.size
+        new_width = int(new_height * cropped_width / cropped_height)
+        resized_im = cropped_im.resize((new_width, new_height))
+        resized_im.save(os.path.join('hresized', imgfile))
+        resized_images.append(resized_im)
+    return resized_images
 
 def crop_x(im, x_crop):
     x, y = im.size
     crop_rectangle = (x_crop, 0, int(x - x_crop), y)
     cropped_im = im.crop(crop_rectangle)
+    return cropped_im
+
+def crop_y(im, y_crop):
+    x, y = im.size
+    crop_rectangle = (0, y_crop, x, int(y - y_crop))
+    cropped_im = im.crop(crop_rectangle)
+    return cropped_im
+
+def crop_y_bottom(im, crop_size):
+    x, y = im.size
+    crop_square = (0, y - x, x, y)
+    square_im = im.crop(crop_square)
+    sq_x, sq_y = square_im.size
+    crop_rectangle = (0, crop_size, sq_x, int(sq_y - crop_size))
+    cropped_im = square_im.crop(crop_rectangle)
+    return cropped_im
+
+def crop_bottom_square(im, crop_size):
+    x, y = im.size
+    crop_square = (0, y - x, x, y)
+    square_im = im.crop(crop_square)
+    sq_x, sq_y = square_im.size
+    crop_rectangle = (crop_size, crop_size, int(sq_x - crop_size), int(sq_y - crop_size))
+    cropped_im = square_im.crop(crop_rectangle)
     return cropped_im
 
 def add_shop_logo(image):
@@ -124,10 +273,21 @@ def add_logo_center(image):
 
     return image
 
+def add_logo_left(image):
+    # Adding logo image
+    logo_im = Image.open(PEDRO_LOGO).convert("RGBA")
+    logo_im = logo_im.resize((600, 112))
+    logoWidth, logoHeight = logo_im.size
+    width, height = image.size
+
+    # Paste logo on botom left
+    image.paste(logo_im, (15, 712), logo_im)
+
+    return image
 def get_images():
     images = []
     for filename in os.listdir():
-        if filename.endswith('.jpg'):
+        if filename.endswith('.jpg') and filename.startswith('20'):
             images.append(filename)
 
     if len(images) > 0:
