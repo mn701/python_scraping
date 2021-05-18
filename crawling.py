@@ -19,7 +19,7 @@ for row in rows:
         print('There was a problem: %s %s' % (e, row[1]))
     else:
         html = urlopen(row[1])
-        bsObj = BeautifulSoup(html.read())
+        bsObj = BeautifulSoup(html, 'lxml')
         txt_availability = ''
         unavailable = bsObj.find("div", {"class":"product_retirement-unavailable_text"})
         if unavailable:
