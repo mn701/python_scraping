@@ -57,6 +57,12 @@ def getItemInfo(url, brand_id):
         else:
             original_price = price
 
+        span_availability = bsObj.find("span", {"class":"pdp-availability_badge"})
+        if span_availability:
+            availability = span_availability.get_text().strip()
+        else:
+            availability = 'Check availability'
+
         # img tags
         arr_img = bsObj.findAll("img", {"itemprop":"image"})
 
@@ -72,7 +78,7 @@ def getItemInfo(url, brand_id):
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
             if(cur.rowcount > 0):
                 item_id = cur.fetchone()[0]
-                store_variation(str(item_id), sku, url, color_code, size)
+                store_variation(str(item_id), sku, url, color_code, size, availability)
                 fetch_other_buyers(str(item_id), sku_short)
             save_imgs(arr_img, sku_short)
         else:
@@ -133,8 +139,8 @@ def execute_sql(sql, category, key):
         logging.warning("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
-def store_variation(item_id, sku, url, color_code, size_name):
-    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "', 1)"
+def store_variation(item_id, sku, url, color_code, size_name, availability):
+    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" + availability + "', 1)"
     execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
