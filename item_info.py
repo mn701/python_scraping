@@ -151,7 +151,8 @@ def fetch_other_buyers(item_id, serial):
         url = "https://www.buyma.com/r/-F1/" + serial
         try:
             html = urlopen(url)
-        except HTTPError as e:
+        except (HTTPError, URLError) as e:
+            print(e.code)
             return None
         try:
             bsObj = BeautifulSoup(html, 'lxml')
