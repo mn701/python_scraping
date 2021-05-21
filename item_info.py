@@ -60,6 +60,8 @@ def getItemInfo(url, brand_id):
         span_availability = bsObj.find("span", {"class":"pdp-availability_badge"})
         if span_availability:
             availability = span_availability.get_text().strip()
+            if availability == '':
+                availability = 'OUT OF STOCK'
         else:
             availability = 'Check availability'
 
