@@ -305,5 +305,11 @@ for filename in os.scandir(directory):
             for filename in os.listdir():
                 if filename.endswith('-1.jpg'):
                     shutil.copy(filename, 'top')
+        if len([name for name in os.listdir() if os.path.isfile(name)]) > 19:
+            if not os.path.exists('extra'):
+                os.mkdir('extra')
+            for filename in os.listdir():
+                if filename.endswith('-8.jpg'):
+                    shutil.move(filename, os.path.join('extra', filename))
         os.chdir('top')
         get_images()
