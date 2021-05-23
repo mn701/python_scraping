@@ -3,6 +3,7 @@ import requests
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import os
+import logging
 
 #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
