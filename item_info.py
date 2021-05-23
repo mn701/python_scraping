@@ -36,12 +36,24 @@ def getItemInfo(url, brand_id):
         for li in bsObj.find("div", {"class":"js-product-details_val"}).findAll("li"):
             details += li.string + '\r\n'
 
+        sku = ''
         if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
             sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
         elif len(bsObj.findAll("span", {"class":{"product-id"}})) > 0:
             sku = bsObj.find("span", {"class":{"product-id"}}).get_text()
-
-        sku_short = re.findall("\w+\d-\d+", sku)[0]
+        if len(sku) == 0:
+            logging.info('check sku at %s.', url)
+            return None
+        try:
+            sku_short = ''
+            if len(re.findall("\w+\d-\d+", sku)) > 0:
+                sku_short = re.findall("\w+\d-\d+", sku)[0]
+            elif len(re.findall("[A-Z0-9]+-[A-Z0-9]", sku)) > 0:
+                sku_short = re.findall("[A-Z0-9]+-[A-Z0-9]", sku)[0]
+            else:
+                sku_short = sku
+        except IndexError:
+            logging.info('check sku at %s.', url)
 
         discounted = bsObj.find("div", {"class":"discount_percentage"})
         if discounted:
@@ -64,6 +76,10 @@ def getItemInfo(url, brand_id):
                 availability = 'OUT OF STOCK'
         else:
             availability = 'Check availability'
+        if size == "Select Size":
+            availability = 'OUT OF STOCK'
+        if availability != 'In Stock' and availability != 'Low in Stock':
+            logging.info('%s is not available!: %s', sku, url)
 
         # img tags
         arr_img = bsObj.findAll("img", {"itemprop":"image"})
