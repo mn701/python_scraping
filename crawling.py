@@ -34,10 +34,17 @@ for row in rows:
             availability = bsObj.find("span", {"class":"pdp-availability_badge"})
             if availability:
                 txt_availability = availability.get_text().strip()
+                if txt_availability == '':
+                    txt_availability = 'OUT OF STOCK'
+                    logging.warning("Check stock: %s", row[1])
             else:
                 txt_availability = 'No Content'
                 logging.warning("No availability info: %s", row[1])
-            id = str(row[0])
+            size = bsObj.find("div", {"class":{"selected-size"}}).get_text().strip()
+            if size == "Select Size":
+                availability = 'OUT OF STOCK'
+                logging.warning("Check stock: %s at %s", row[0], row[1])
+        id = str(row[0])
         sql = "UPDATE variations SET availability = '" + txt_availability + "' WHERE id = '" + id + "'"
 
         cur.execute(sql)
