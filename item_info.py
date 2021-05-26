@@ -2,6 +2,7 @@ from urllib.request import urlopen
 from urllib.error import HTTPError
 from bs4 import BeautifulSoup
 from urllib.request import urlretrieve
+from urllib.error import URLError
 import re
 import os
 import pymysql
