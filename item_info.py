@@ -28,6 +28,7 @@ def getItemInfo(url, brand_id):
     try:
         bsObj = BeautifulSoup(html, 'lxml')
         title = bsObj.h1.string
+        title = title[:60]
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text().strip()
         color = bsObj.find("div", {"class":{"selected-color"}}).get_text().strip()
