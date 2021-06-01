@@ -50,8 +50,8 @@ def getItemInfo(url, brand_id):
             sku_short = ''
             if len(re.findall("\w+\d-\d+", sku)) > 0:
                 sku_short = re.findall("\w+\d-\d+", sku)[0]
-            elif len(re.findall("[A-Z0-9]+-[A-Z0-9]", sku)) > 0:
-                sku_short = re.findall("[A-Z0-9]+-[A-Z0-9]", sku)[0]
+            elif len(re.findall("[A-Z0-9|-]+", sku)) > 0:
+                sku_short = re.findall("[A-Z0-9|-]+", sku)[0]
             else:
                 sku_short = sku
         except IndexError:
