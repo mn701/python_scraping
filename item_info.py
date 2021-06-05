@@ -28,6 +28,7 @@ def getItemInfo(url, brand_id):
     try:
         bsObj = BeautifulSoup(html, 'lxml')
         title = bsObj.h1.string
+        title = title[:60]
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text().strip()
         color = bsObj.find("div", {"class":{"selected-color"}}).get_text().strip()
@@ -49,8 +50,8 @@ def getItemInfo(url, brand_id):
             sku_short = ''
             if len(re.findall("\w+\d-\d+", sku)) > 0:
                 sku_short = re.findall("\w+\d-\d+", sku)[0]
-            elif len(re.findall("[A-Z0-9]+-[A-Z0-9]", sku)) > 0:
-                sku_short = re.findall("[A-Z0-9]+-[A-Z0-9]", sku)[0]
+            elif len(re.findall("[A-Z0-9|-]+", sku)) > 0:
+                sku_short = re.findall("[A-Z0-9|-]+", sku)[0]
             else:
                 sku_short = sku
         except IndexError:
@@ -93,7 +94,15 @@ def getItemInfo(url, brand_id):
         cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
         exist = cur.fetchone()
         if exist is None:
-            store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+            cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
+            exist = cur.fetchone()
+            if exist is None:
+                ## add new item
+                store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+            else:
+                cur.execute("UPDATE items set listed = NULL WHERE serial='" + sku_short + "'")
+                conn.commit()
+            ## add new variation
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
             if(cur.rowcount > 0):
                 item_id = cur.fetchone()[0]
