@@ -27,7 +27,7 @@ def getItemInfo(url, brand_id):
         return None
     try:
         bsObj = BeautifulSoup(html, 'lxml')
-        title = bsObj.h1.string
+        title = bsObj.h1.string.strip()
         title = title[:60]
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
         description = bsObj.find("div", {"itemprop":{"description"}}).get_text().strip()
@@ -153,7 +153,9 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
     if exist is None:
         description = description.replace("'", "''")
         details = details.replace("'", "''")
-        sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season) VALUES ('" + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" + sale_info  + "', '" + description + "', '" + details + "','" + season + "')"
+        sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed) VALUES ('" \
+        + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" \
+        + sale_info  + "', '" + description + "', '" + details + "','" + season + "', 3)"
         execute_sql(sql, 'item', serial)
 
 # execute insert-into and log result
@@ -168,7 +170,16 @@ def execute_sql(sql, category, key):
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name, availability):
-    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock) VALUES ('" + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" + availability + "', 1)"
+    sql = "select color_j from ck_colors where color_code = '" + ck_col + "'"
+    cur.execute(sql)
+    color_j = cur.fetchone()[0]
+    sql = "select bm_color_family from ck_colors where color_code = '" + ck_col + "'"
+    cur.execute(sql)
+    color_family = cur.fetchone()[0]
+
+    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family) VALUES ('" \
+    + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
+    + availability + "', 1, '" + color_j + "', '" + color_family + "')"
     execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
