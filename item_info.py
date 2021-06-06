@@ -9,6 +9,7 @@ import pymysql
 import webbrowser
 import logging
 import math
+import json
 
 #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
@@ -40,6 +41,7 @@ def getItemInfo(url, brand_id):
             details += li.string + '\r\n'
             details_list.append(li.string)
         size_info = size_from_details(details_list)
+        size_info = json.dumps(size_info)
 
         sku = ''
         if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
@@ -117,10 +119,11 @@ def getItemInfo(url, brand_id):
                 fetch_other_buyers(str(item_id), sku_short)
             save_imgs(arr_img, sku_short)
         else:
+            cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
             var_id = cur.fetchone()[0]
             # logging.info('%s already exists!', sku)
             size_info
-            cur.execute("UPDATE items set size_info = '" + size_info + "' WHERE id ='" + str(var_id) + "'")
+            cur.execute("UPDATE Variations set size_info = '" + size_info + "' WHERE id ='" + str(var_id) + "'")
             conn.commit()
 
         # opening URL in chrome browser
@@ -143,7 +146,6 @@ def save_imgs(images, folderName):
         imgname = get_imgname(img)
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
-        img_urls.append(imglocation)
 
 def get_imglocation(img):
     if img.has_attr('data-src'):
@@ -228,7 +230,7 @@ def store_buyer_price(item_id, buyer, price, url):
 
 def size_from_details(lst):
     size_info = {}
-    for str in list:
+    for str in lst:
         myregex = '(\w+)\s\(cm\):\s(\d+(\.\d+)?)'
         matched = re.match(myregex, str)
         if matched:
