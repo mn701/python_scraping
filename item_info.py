@@ -37,6 +37,7 @@ def getItemInfo(url, brand_id):
         details = ''
         for li in bsObj.find("div", {"class":"js-product-details_val"}).findAll("li"):
             details += li.string + '\r\n'
+        size_info = size_from_details(details)
 
         sku = ''
         if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
@@ -110,7 +111,7 @@ def getItemInfo(url, brand_id):
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
             if(cur.rowcount > 0):
                 item_id = cur.fetchone()[0]
-                store_variation(str(item_id), sku, url, color_code, size, availability, img_urls)
+                store_variation(str(item_id), sku, url, color_code, size, availability, img_urls, size_info)
                 fetch_other_buyers(str(item_id), sku_short)
             save_imgs(arr_img, sku_short)
         else:
@@ -172,7 +173,7 @@ def execute_sql(sql, category, key):
         logging.warning("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
-def store_variation(item_id, sku, url, color_code, size_name, availability, img_urls):
+def store_variation(item_id, sku, url, color_code, size_name, availability, img_urls, size_info):
     sql = "select color_j from ck_colors where color_code = '" + color_code + "'"
     cur.execute(sql)
     color_j = cur.fetchone()[0]
@@ -182,9 +183,9 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, img_
 
     str_list = ', '.join(img_urls)
 
-    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, img_urls) VALUES ('" \
+    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, img_urls, size_info) VALUES ('" \
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
-    + availability + "', 1, '" + str(color_j) + "', '" + str(color_family) + "', '" + str_list + "')"
+    + availability + "', 1, '" + str(color_j) + "', '" + str(color_family) + "', '" + str_list + "', '" + size_info + "')"
     execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
@@ -218,6 +219,32 @@ def fetch_other_buyers(item_id, serial):
 def store_buyer_price(item_id, buyer, price, url):
     sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
     execute_sql(sql, 'buyer_price', url)
+
+def size_from_details(lst):
+    arr.forEach(function(item){
+    let myregex = /Depth.*\s(\d+(\.\d+)?)/
+    let matches = item.match(myregex)
+    if(myregex.test(item)){
+      depth = matches[1]
+    }
+
+    myregex = /Width.*\s(\d+(\.\d+)?)/
+    matches = item.match(myregex)
+    if(myregex.test(item)){
+      width = matches[1]
+    }
+
+    myregex = /Height.*\s(\d+(\.\d+)?)/
+    matches = item.match(myregex)
+    if(myregex.test(item)){
+      height = matches[1]
+    }
+
+    myregex = /Handle\sDrop.*\s(\d+(\.\d+)?)/
+    matches = item.match(myregex)
+    if(myregex.test(item)){
+      handle_drop = matches[1]
+    }
 
 def get_items_from_list(lst, brand_id):
     for url in lst:
