@@ -159,8 +159,6 @@ AND availability IN ( 'In Stock', 'Low in Stock' )"
 cur.execute(sql)
 rows = cur.fetchall()
 
-
-
 with open('colsize_backstock.csv', 'w', newline='') as file:
     fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
     writer = csv.DictWriter(file, fieldnames=fieldnames)
@@ -169,18 +167,3 @@ with open('colsize_backstock.csv', 'w', newline='') as file:
         # update 在庫ステータス to 1
         writer.writerow({'商品ID': row['buyma_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
         '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': 1})
-
-def get_images(item_id):
-    sql = "SELECT img_urls FROM variations WHERE item_id = " + str(item_id)
-    cur.execute(sql)
-    rows = cur.fetchall()
-    fp = open('file.csv', 'w')
-    myFile = csv.writer(fp)
-    myFile.writerow(rows)
-    fp.close()
-
-    # for row in rows:
-    #     url_lst = row[0].split(", ")
-    #     print(url_lst)
-
-get_images(204)
