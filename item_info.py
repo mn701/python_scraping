@@ -34,10 +34,12 @@ def getItemInfo(url, brand_id):
         color = bsObj.find("div", {"class":{"selected-color"}}).get_text().strip()
         size = bsObj.find("div", {"class":{"selected-size"}}).get_text().strip()
 
-        details = ''
+        details = '' #string
+        details_list = [] #list
         for li in bsObj.find("div", {"class":"js-product-details_val"}).findAll("li"):
             details += li.string + '\r\n'
-        size_info = size_from_details(details)
+            details_list.append(li.string)
+        size_info = size_from_details(details_list)
 
         sku = ''
         if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
@@ -105,7 +107,7 @@ def getItemInfo(url, brand_id):
                 ## add new item
                 store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
             else:
-                cur.execute("UPDATE items set listed = NULL WHERE serial='" + sku_short + "'")
+                cur.execute("UPDATE items set listed = 3 WHERE serial='" + sku_short + "'")
                 conn.commit()
             ## add new variation
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
@@ -115,7 +117,11 @@ def getItemInfo(url, brand_id):
                 fetch_other_buyers(str(item_id), sku_short)
             save_imgs(arr_img, sku_short)
         else:
-            logging.info('%s already exists!', sku)
+            var_id = cur.fetchone()[0]
+            # logging.info('%s already exists!', sku)
+            size_info
+            cur.execute("UPDATE items set size_info = '" + size_info + "' WHERE id ='" + str(var_id) + "'")
+            conn.commit()
 
         # opening URL in chrome browser
         # chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
@@ -221,30 +227,15 @@ def store_buyer_price(item_id, buyer, price, url):
     execute_sql(sql, 'buyer_price', url)
 
 def size_from_details(lst):
-    arr.forEach(function(item){
-    let myregex = /Depth.*\s(\d+(\.\d+)?)/
-    let matches = item.match(myregex)
-    if(myregex.test(item)){
-      depth = matches[1]
-    }
-
-    myregex = /Width.*\s(\d+(\.\d+)?)/
-    matches = item.match(myregex)
-    if(myregex.test(item)){
-      width = matches[1]
-    }
-
-    myregex = /Height.*\s(\d+(\.\d+)?)/
-    matches = item.match(myregex)
-    if(myregex.test(item)){
-      height = matches[1]
-    }
-
-    myregex = /Handle\sDrop.*\s(\d+(\.\d+)?)/
-    matches = item.match(myregex)
-    if(myregex.test(item)){
-      handle_drop = matches[1]
-    }
+    size_info = {}
+    for str in details_list:
+        myregex = '(\w+)\s\(cm\):\s(\d+(\.\d+)?)'
+        matched = re.match(myregex, str)
+        if matched:
+            key = re.findall(myregex, str)[0][0]
+            val = re.findall(myregex, str)[0][1]
+            size_info[key] = val
+     size_info
 
 def get_items_from_list(lst, brand_id):
     for url in lst:
