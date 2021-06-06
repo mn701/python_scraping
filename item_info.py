@@ -228,14 +228,14 @@ def store_buyer_price(item_id, buyer, price, url):
 
 def size_from_details(lst):
     size_info = {}
-    for str in details_list:
+    for str in list:
         myregex = '(\w+)\s\(cm\):\s(\d+(\.\d+)?)'
         matched = re.match(myregex, str)
         if matched:
             key = re.findall(myregex, str)[0][0]
             val = re.findall(myregex, str)[0][1]
             size_info[key] = val
-     size_info
+    return size_info
 
 def get_items_from_list(lst, brand_id):
     for url in lst:
