@@ -11,21 +11,21 @@ cur.execute("USE shop")
 
 sql = "SELECT * FROM Items, Variations \
 WHERE Items.item_id = Variations.item_id AND Items.listed = 3 AND \
-has_stock = 0 AND availability IN ('In Stock', 'Low in Stock')"
+has_stock = 1 AND availability IN ('In Stock', 'Low in Stock')"
 cur.execute(sql)
 rows = cur.fetchall()
 
-with open('new_colorsizes.csv', 'w', newline='') as file:
-    fieldnames = ['商品管理番号', '並び順', 'サイズ名称', '検索用サイズ', '色名称', '色系統', '在庫ステータス', '幅', '高さ', 'マチ']
+with open('colorsizes.csv', 'w', newline='') as file:
+    fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', '縦', '横', '厚み']
     writer = csv.DictWriter(file, fieldnames=fieldnames)
     writer.writeheader()
     for row in rows:
         writer.writerow({'商品管理番号': row['item_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
         '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': row['has_stock'],
-        '幅': 22.5, '高さ': 16.5, 'マチ': 9.5})
+        '縦': 10.3, '横': 13, '厚み': 4})
 
 sql = "SELECT Listed_items.*, Items.listed, Items.brand_id FROM Items, Listed_items \
-WHERE listed = 3 AND Items.item_id = Listed_items.item_id"
+WHERE listed = 3 AND Items.item_id = Listed_items.item_id AND Items.item_id = 204"
 cur.execute(sql)
 rows = cur.fetchall()
 
@@ -34,7 +34,7 @@ COURIER = 677239
 CK_SHOP = 'Charles&Keith直営店'
 PW_SHOP = 'Pedro直営店'
 
-with open('new_items.csv', 'w', newline='') as file:
+with open('items.csv', 'w', newline='') as file:
     fieldnames = ['商品ID','商品管理番号','コントロール','商品名','ブランド','カテゴリ','シーズン','単価','買付可数量', \
     '購入期限','参考価格/通常出品価格', '商品コメント', '色サイズ補足', 'タグ', '配送方法', '買付エリア', '買付都市', '買付ショップ', \
     '発送エリア','発送都市','関税込み', '商品イメージ1','商品イメージ2','商品イメージ3','商品イメージ4','商品イメージ5', \
@@ -77,6 +77,8 @@ with open('new_items.csv', 'w', newline='') as file:
         new_listings['色サイズ補足'] = row['reference']
         new_listings['タグ'] = row['tags']
 
+        new_listings['商品イメージ1'] = 'https://www.charleskeith.com/dw/image/v2/BCWJ_PRD/on/demandware.static/-/Sites-ck-products/default/dw4ae864e9/images/hi-res/2021-L2-CK6-10840224-01-1.jpg?sw=1152&sh=1536'
+
         writer.writerow(new_listings)
 
 
@@ -108,10 +110,7 @@ AND availability IN ( 'In Stock', 'Low in Stock' )"
 cur.execute(sql)
 rows = cur.fetchall()
 
-fp = open('file.csv', 'w')
-myFile = csv.writer(fp)
-myFile.writerow(rows)
-fp.close()
+
 
 with open('colsize_backstock.csv', 'w', newline='') as file:
     fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
@@ -121,3 +120,18 @@ with open('colsize_backstock.csv', 'w', newline='') as file:
         # update 在庫ステータス to 1
         writer.writerow({'商品ID': row['buyma_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
         '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': 1})
+
+def get_images(item_id):
+    sql = "SELECT img_urls FROM variations WHERE item_id = " + str(item_id)
+    cur.execute(sql)
+    rows = cur.fetchall()
+    fp = open('file.csv', 'w')
+    myFile = csv.writer(fp)
+    myFile.writerow(rows)
+    fp.close()
+
+    # for row in rows:
+    #     url_lst = row[0].split(", ")
+    #     print(url_lst)
+
+get_images(204)
