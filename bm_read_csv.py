@@ -7,7 +7,7 @@ pw = os.environ.get('mysql_password')
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
 cur = conn.cursor()
 cur.execute("USE shop")
-df = pd.read_csv('/Users/MN1/Documents/Buyma/downloads_zaiko_only/colorsizes.utf8.csv', dtype=str)
+df = pd.read_csv('./colorsizes.utf8.csv', dtype=str)
 
 cur.execute("SELECT * FROM variations")
 rows = cur.fetchall()
@@ -30,7 +30,7 @@ for row in rows:
     except IndexError:
         pass
 
-df = pd.read_csv('/Users/MN1/Documents/Buyma/downloads_zaiko_only/items.utf8.csv', dtype=str)
+df = pd.read_csv('./items.utf8.csv', dtype=str)
 
 cur.execute("SELECT * FROM Listed_items")
 rows = cur.fetchall()

@@ -1,7 +1,8 @@
 import csv
 import pymysql
 
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd='wawa1234', db='mysql')
+pw = os.environ.get('mysql_password')
+conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
 
 cur = conn.cursor(pymysql.cursors.DictCursor)
 cur.execute("USE shop")
