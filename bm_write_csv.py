@@ -2,6 +2,7 @@ import csv
 import pymysql
 from datetime import date
 from dateutil.relativedelta import relativedelta
+import os
 
 pw = os.environ.get('mysql_password')
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
