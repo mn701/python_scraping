@@ -91,6 +91,10 @@ def getItemInfo(url, brand_id):
         season = imgname[0:7]
         color_code =  re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
 
+        img_urls = []
+        for img in arr_img:
+            img_urls.append(get_imglocation(img))
+
         cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
         exist = cur.fetchone()
         if exist is None:
@@ -106,7 +110,7 @@ def getItemInfo(url, brand_id):
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
             if(cur.rowcount > 0):
                 item_id = cur.fetchone()[0]
-                store_variation(str(item_id), sku, url, color_code, size, availability)
+                store_variation(str(item_id), sku, url, color_code, size, availability, img_urls)
                 fetch_other_buyers(str(item_id), sku_short)
             save_imgs(arr_img, sku_short)
         else:
@@ -127,13 +131,12 @@ def save_imgs(images, folderName):
     if os.path.isdir(reqPath) == False:
         os.mkdir(folderName)
 
-    color_code = 'none'
-    season = 'none'
     for img in images:
         imglocation = get_imglocation(img)
         imgname = get_imgname(img)
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
+        img_urls.append(imglocation)
 
 def get_imglocation(img):
     if img.has_attr('data-src'):
@@ -169,17 +172,19 @@ def execute_sql(sql, category, key):
         logging.warning("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
-def store_variation(item_id, sku, url, color_code, size_name, availability):
-    sql = "select color_j from ck_colors where color_code = '" + ck_col + "'"
+def store_variation(item_id, sku, url, color_code, size_name, availability, img_urls):
+    sql = "select color_j from ck_colors where color_code = '" + color_code + "'"
     cur.execute(sql)
     color_j = cur.fetchone()[0]
-    sql = "select bm_color_family from ck_colors where color_code = '" + ck_col + "'"
+    sql = "select bm_color_family from ck_colors where color_code = '" + color_code + "'"
     cur.execute(sql)
     color_family = cur.fetchone()[0]
 
-    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family) VALUES ('" \
+    str_list = ', '.join(img_urls)
+
+    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, img_urls) VALUES ('" \
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
-    + availability + "', 1, '" + color_j + "', '" + color_family + "')"
+    + availability + "', 1, '" + str(color_j) + "', '" + str(color_family) + "', '" + str_list + "')"
     execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
