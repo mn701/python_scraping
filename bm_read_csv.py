@@ -8,7 +8,7 @@ conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='roo
 # cur = conn.cursor()
 cur = conn.cursor(pymysql.cursors.DictCursor)
 cur.execute("USE shop")
-df = pd.read_csv('./colorsizes.utf8.csv', dtype=str)
+df = pd.read_csv('./downloaded/colorsizes.utf8.csv', dtype=str)
 
 cur.execute("SELECT * FROM variations")
 rows = cur.fetchall()
@@ -21,17 +21,15 @@ for row in rows:
         new_stock = selected_variation['在庫ステータス'].values[0]
         sql = "UPDATE variations SET has_stock = '" + new_stock + "' WHERE id = '" + str(row['id']) + "'"
         cur.execute(sql)
-        if row['is_listed'] == null:
+        if row['is_listed'] == None:
             bm_col_family = selected_variation['色系統'].values[0]
-            sql = "UPDATE variations SET bm_col_family = '" + bm_col_family + "', '"\
-            + "is_listed = 1 "\
-            + " WHERE id = '" + str(row['id']) + "'"
+            sql = "UPDATE variations SET bm_col_family = '" + bm_col_family + "', is_listed = 1 WHERE id = '" + str(row['id']) + "'"
             cur.execute(sql)
         conn.commit()
     except IndexError:
         pass
 
-df = pd.read_csv('./items.utf8.csv', dtype=str)
+df = pd.read_csv('./downloaded/items.utf8.csv', dtype=str)
 
 cur.execute("SELECT * FROM Listed_items")
 rows = cur.fetchall()
