@@ -121,17 +121,13 @@ def create_new_items():
                 new_listing['ブランド'] = 13301
                 new_listing['買付ショップ'] = PW_SHOP
                 new_listing['買付先名1'] = PW_SHOP
-                if PW_BRAND_INFO in row['comment']:
-                    new_listing['商品コメント'] = row['comment'].strip()
-                else:
-                    new_listing['商品コメント'] = row['comment'].strip() + '\n' + PW_BRAND_INFO
 
             new_listing['商品管理番号'] = row['item_id']
             new_listing['商品名'] = row['listed_name']
             new_listing['カテゴリ'] = row['category']
             new_listing['シーズン'] = row['season']
             new_listing['単価'] = row['sale_price']
-
+            new_listing['商品コメント'] = row['comment'].strip()
             new_listing['色サイズ補足'] = row['reference']
             new_listing['タグ'] = row['tags']
 
