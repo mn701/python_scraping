@@ -15,30 +15,6 @@ COURIER = 677239
 CK_SHOP = 'Charles&Keith直営店'
 PW_SHOP = 'Pedro直営店'
 
-CK_BRAND_INFO = '''
-＜商品のお手入れについて＞
-- 皮革、合成皮革、金属製アクセサリーなどの素材を、湿気、液体、熱、日光に直接または過度にさらさないようにしてください。 これらの要素にさらされると、永久的な摩耗が発生する可能性があります。
-- 過度の摩擦や化粧品や溶剤などの油性物質との接触は、損傷、退色、または明るい色の衣服や表面への色移りを引き起こす可能性があります。
-- 汚れ、ほこりの除去には、柔らかく湿った布を使用してください。
-- 使用しないときは、箱または保護ダストバッグに入れて、涼しく乾燥した場所に保管してください。
-ブランド公式ページ参照
-Product Care | Sustainability | Charles & Keith Group (charleskeithgroup.com)
-
-＜CHARLES & KEITH（チャールズ＆キース）について＞
-日本でも人気の、シンガポールのローカルブランド、CHARLES & KEITH。
-シンガポールの街を歩けば必ずCHARLES & KEITHのシューズやバッグを身につけた女性を目にします。
-商品の回転が速く、毎週新しい商品が店頭に並ぶため
-前シーズンの商品はすぐに店舗から消えてしまいます。
-'''
-
-PW_BRAND_INFO = '''
-＜Pedro(ペドロ)について＞
-Pedro(ペドロ)は、Charles＆Keith（チャールズ＆キース）同様シンガポール発のローカルブランドで、日本には未上陸。
-2005年の創業以来、メンズとレディースのシューズ、バッグ、アクセサリーのコレクションを100店舗以上でグローバル展開しています。
-プチプラでありながら、スタイリッシュでエレガントなデザインは高見え間違いなし。
-お手頃価格で、憧れの流行デザインも敏感に取り入れたラインナップが手に入ります。
-'''
-
 def get_lst19(item_id):
     cur.execute("SELECT id, item_id, img_urls FROM variations where item_id = " + str(item_id) + " order by color_code")
     rows = cur.fetchall()
@@ -141,10 +117,6 @@ def create_new_items():
                 new_listing['買付ショップ'] = CK_SHOP
                 new_listing['買付先名1'] = CK_SHOP
 
-                if CK_BRAND_INFO in row['comment']:
-                    new_listing['商品コメント'] = row['comment'].strip()
-                else:
-                    new_listing['商品コメント'] = row['comment'].strip() + '\n' + CK_BRAND_INFO
             elif row['brand_id'] == 2:
                 new_listing['ブランド'] = 13301
                 new_listing['買付ショップ'] = PW_SHOP
