@@ -85,6 +85,9 @@ def getItemInfo(url, brand_id):
             availability = 'Check availability'
         if size == "Select Size":
             availability = 'OUT OF STOCK'
+            size_span = bsObj.find("span", {"class":"size-value"})
+            if size_span:
+                size = size_span.get_text().strip()
         if availability != 'In Stock' and availability != 'Low in Stock':
             logging.info('%s is not available!: %s', sku, url)
 
