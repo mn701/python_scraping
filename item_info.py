@@ -184,14 +184,14 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, img_
         cur.execute(sql)
         row = cur.fetchone()
         if row == None: color_j = ""
-        else: color_j = cur.fetchone()[0]
+        else: color_j = row[0]
         sql = "select bm_color_family from ck_colors where color_code = '" + color_code + "'"
         cur.execute(sql)
         row = cur.fetchone()
         if row == None:
             color_family = 0
         else:
-            color_family = cur.fetchone()[0]
+            color_family = row[0]
     except pymysql.err.IntegrityError:
             logging.warning("check color of: %s", sku)
 
