@@ -53,7 +53,7 @@ def get_lst19(item_id):
 def create_new_colorsizes():
     sql = "SELECT Variations.*, Items.listed, Listed_items.category FROM Items, Variations, Listed_items \
     WHERE Items.item_id = Variations.item_id AND Listed_items.item_id = Variations.item_id AND \
-    Items.listed = 3 AND availability NOT IN ('Unavailable') "
+    Items.listed = 3 AND availability NOT IN ('Unavailable') AND is_listed IS NULL"
     cur.execute(sql)
     rows = cur.fetchall()
 
@@ -70,13 +70,13 @@ def create_new_colorsizes():
                 dict_size_info = json.loads(row['size_info'])
 
             if row['category'] == 3169 or row['category'] == 3111:
-                new_variation['縦'] = dict_size_info['Height']
-                new_variation['横'] = dict_size_info['Width']
-                new_variation['厚み'] = dict_size_info['Depth']
+                new_variation['縦'] = dict_size_info.get('Height')
+                new_variation['横'] = dict_size_info.get('Width')
+                new_variation['厚み'] = dict_size_info.get('Depth')
             else:
-                new_variation['高さ'] = dict_size_info['Height']
-                new_variation['幅'] = dict_size_info['Width']
-                new_variation['マチ'] = dict_size_info['Depth']
+                new_variation['高さ'] = dict_size_info.get('Height')
+                new_variation['幅'] = dict_size_info.get('Width')
+                new_variation['マチ'] = dict_size_info.get('Depth')
 
             writer.writerow(new_variation)
 
@@ -233,4 +233,4 @@ def create_new():
     create_new_colorsizes()
     create_new_items()
 
-back_stock()
+create_new()
