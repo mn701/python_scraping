@@ -77,11 +77,11 @@ def get_lst19(item_id):
 def create_new_colorsizes():
     sql = "SELECT Variations.*, Items.listed, Listed_items.category FROM Items, Variations, Listed_items \
     WHERE Items.item_id = Variations.item_id AND Listed_items.item_id = Variations.item_id AND \
-    Items.listed = 3 AND availability IN ('In Stock', 'Low in Stock') "
+    Items.listed = 3 AND availability NOT IN ('Unavailable') "
     cur.execute(sql)
     rows = cur.fetchall()
 
-    with open('colorsizes.csv', 'w', newline='') as file:
+    with open('./new/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', '幅', '高さ', 'マチ', '縦', '横', '厚み']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -111,7 +111,7 @@ def create_new_items():
     cur.execute(sql)
     rows = cur.fetchall()
 
-    with open('items.csv', 'w', newline='') as file:
+    with open('./new/items.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','商品管理番号','コントロール','商品名','ブランド','カテゴリ','シーズン','単価','買付可数量', \
         '購入期限','参考価格/通常出品価格', '商品コメント', '色サイズ補足', 'タグ', '配送方法', '買付エリア', '買付都市', '買付ショップ', \
         '発送エリア','発送都市','関税込み', '商品イメージ1','商品イメージ2','商品イメージ3','商品イメージ4','商品イメージ5', \
@@ -195,7 +195,7 @@ def out_of_stock():
     cur.execute(sql)
     rows = cur.fetchall()
 
-    with open('colsize_outofstock.csv', 'w', newline='') as file:
+    with open('./csv/colsize_outofstock.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -212,7 +212,7 @@ def back_stock():
     cur.execute(sql)
     rows = cur.fetchall()
 
-    with open('colsize_backstock.csv', 'w', newline='') as file:
+    with open('./csv/colsize_backstock.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
