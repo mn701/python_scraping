@@ -195,7 +195,7 @@ def out_of_stock():
     cur.execute(sql)
     rows = cur.fetchall()
 
-    with open('./csv/colsize_outofstock.csv', 'w', newline='') as file:
+    with open('./outofstock/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -203,6 +203,46 @@ def out_of_stock():
             # update 在庫ステータス to 0
             writer.writerow({'商品ID': row['buyma_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
             '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': 0})
+
+    sql = "SELECT distinct Variations.item_id FROM Variations, listed_items \
+    WHERE listed_items.item_id = Variations.item_id AND has_stock = 1 AND availability NOT IN ( 'In Stock', 'Low in Stock' )"
+    cur.execute(sql)
+    item_rows = cur.fetchall()
+    items_to_retire = list()
+    for item_row in item_rows:
+        sql = "SELECT availability from Variations WHERE availability IN ( 'In Stock', 'Low in Stock' ) \
+        and item_id = " + str(item_row['item_id'])
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row is None:
+            items_to_retire.append(str(item_row['item_id']))
+
+    items_to_be_retired(items_to_retire)
+
+def items_to_be_retired(items):
+    str = ", ".join(items)
+    # fetch listed items to be unlisted
+    sql = "SELECT * FROM listed_items WHERE item_id IN (" + str + ")"
+    cur.execute(sql)
+    rows = cur.fetchall()
+    with open('./outofstock/items.csv', 'w', newline='') as file:
+        fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格']
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        item_retire = {}
+        # default values
+        item_retire['コントロール'] = '停止'
+        item_retire['買付可数量'] = 0
+        item_retire['参考価格/通常出品価格'] = 0
+        for row in rows:
+            item_retire['商品ID'] = row['buyma_id']
+            item_retire['商品管理番号'] = row['item_id']
+            item_retire['商品名'] = row['listed_name']
+            item_retire['単価'] = row['sale_price']
+            item_retire['購入期限'] = row['valid_till']
+
+            writer.writerow(item_retire)
 
 # fetch variations back to available, and not listed
 def back_stock():
@@ -212,7 +252,7 @@ def back_stock():
     cur.execute(sql)
     rows = cur.fetchall()
 
-    with open('./csv/colsize_backstock.csv', 'w', newline='') as file:
+    with open('./backtostock/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -225,4 +265,4 @@ def create_new():
     create_new_colorsizes()
     create_new_items()
 
-create_new()
+back_stock()
