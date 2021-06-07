@@ -100,7 +100,7 @@ def getItemInfo(url, brand_id):
         for img in arr_img:
             img_urls.append(get_imglocation(img))
 
-        cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
+        cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "' OR url='" + url +"'")
         exist = cur.fetchone()
         if exist is None:
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
@@ -117,7 +117,7 @@ def getItemInfo(url, brand_id):
                 item_id = cur.fetchone()[0]
                 store_variation(str(item_id), sku, url, color_code, size, availability, img_urls, size_info)
                 fetch_other_buyers(str(item_id), sku_short)
-            save_imgs(arr_img, sku_short)
+            save_imgs(img_urls, sku_short)
         else:
             cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
             var_id = cur.fetchone()[0]
@@ -135,14 +135,13 @@ def getItemInfo(url, brand_id):
         return None
 
 # download images in the folder
-def save_imgs(images, folderName):
+def save_imgs(imglocations, folderName):
     currPath = os.path.dirname(os.path.realpath(__file__))
     reqPath = os.path.join(currPath,folderName)
     if os.path.isdir(reqPath) == False:
         os.mkdir(folderName)
 
-    for img in images:
-        imglocation = get_imglocation(img)
+    for imglocation in imglocations:
         imgname = get_imgname(img)
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
