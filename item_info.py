@@ -140,7 +140,7 @@ def save_imgs(imglocations, folderName):
         os.mkdir(folderName)
 
     for imglocation in imglocations:
-        imgname = get_imgname(img)
+        imgname = re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
         filename = os.path.join(reqPath, imgname)
         urlretrieve(imglocation, filename)
 
@@ -174,17 +174,26 @@ def execute_sql(sql, category, key):
         conn.commit()
         # logging.warning("%d", affected_count)
         logging.info("inserted %s: %s", category, key)
-    except MySQLdb.IntegrityError:
+    except pymysql.err.IntegrityError:
         logging.warning("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name, availability, img_urls, size_info):
     sql = "select color_j from ck_colors where color_code = '" + color_code + "'"
-    cur.execute(sql)
-    color_j = cur.fetchone()[0]
-    sql = "select bm_color_family from ck_colors where color_code = '" + color_code + "'"
-    cur.execute(sql)
-    color_family = cur.fetchone()[0]
+    try:
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row == None: color_j = ""
+        else: color_j = cur.fetchone()[0]
+        sql = "select bm_color_family from ck_colors where color_code = '" + color_code + "'"
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row == None:
+            color_family = 0
+        else:
+            color_family = cur.fetchone()[0]
+    except pymysql.err.IntegrityError:
+            logging.warning("check color of: %s", sku)
 
     str_list = ', '.join(img_urls)
 
@@ -272,12 +281,13 @@ bsObj = BeautifulSoup(html, 'lxml')
 
 res_cont_div = bsObj.find('div', {"class":"result-count"}).find('span').string.strip()
 res_cont = int(re.sub(r'[^0-9]+', '', res_cont_div))
+print(res_cont)
 
-# n = math.ceil(res_cont / 60)
-# for i in range(n):
-#     get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
+n = math.ceil(res_cont / 60)
+for i in range(n):
+    get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
 
-# # different from item.py, scrawling sale pages
+# different from item.py, scrawling sale pages
 # get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags")
 # get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags?page=2")
 
