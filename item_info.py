@@ -122,12 +122,7 @@ def getItemInfo(url, brand_id):
                 fetch_other_buyers(str(item_id), sku_short)
             save_imgs(img_urls, sku_short)
         else:
-            cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "'")
-            var_id = cur.fetchone()[0]
-            # logging.info('%s already exists!', sku)
-            size_info
-            cur.execute("UPDATE Variations set size_info = '" + size_info + "' WHERE id ='" + str(var_id) + "'")
-            conn.commit()
+            logging.info('%s already exists', sku)
 
         # opening URL in chrome browser
         # chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
