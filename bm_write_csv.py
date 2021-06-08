@@ -16,7 +16,7 @@ CK_SHOP = 'Charles&Keith直営店'
 PW_SHOP = 'Pedro直営店'
 
 def get_lst19(item_id):
-    cur.execute("SELECT id, item_id, img_urls FROM variations where item_id = " + str(item_id) + " order by color_code")
+    cur.execute("SELECT img_urls FROM variations where item_id = " + str(item_id) + " order by color_code")
     rows = cur.fetchall()
 
     lst_urls = list()
@@ -38,12 +38,16 @@ def get_lst19(item_id):
                 lst19.append(url)
     else:
         q = divmod(19, num_colors)[0] # 6
-        for i in range(q):
-            for lst in lst_urls:
-                if len(lst) > i+1:
-                    lst19.append(lst[i + 1])
+        for lst in lst_urls:
+            lst_len = len(lst)
+            if lst_len - 1 > q:
+                for url in lst[1:q+1]:
+                    lst19.append(url)
+            else:
+                for url in lst[1:lst_len]:
+                    lst19.append(url)
 
-    res = []
+    res = list()
     for val in lst19:
         if val != None :
             res.append(val)
@@ -229,8 +233,59 @@ def back_stock():
             writer.writerow({'商品ID': row['buyma_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
             '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': 1})
 
+def items_to_be_updated():
+    # fetch items to be updated
+    sql = "SELECT Listed_items.*, Items.listed FROM Items, Listed_items \
+    WHERE listed = 4 AND Items.item_id = Listed_items.item_id"
+    cur.execute(sql)
+    rows = cur.fetchall()
+    with open('./update/items.csv', 'w', newline='') as file:
+        fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格', \
+        '商品イメージ1','商品イメージ2','商品イメージ3','商品イメージ4','商品イメージ5', \
+        '商品イメージ6','商品イメージ7','商品イメージ8','商品イメージ9','商品イメージ10', \
+        '商品イメージ11','商品イメージ12','商品イメージ13', '商品イメージ14','商品イメージ15', \
+        '商品イメージ16','商品イメージ17','商品イメージ18','商品イメージ19','商品イメージ20']
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        item_update = {}
+        # default values
+        item_update['コントロール'] = '公開'
+        item_update['買付可数量'] = 2
+        item_update['参考価格/通常出品価格'] = 0
+        for row in rows:
+            item_update['商品ID'] = row['buyma_id']
+            item_update['商品管理番号'] = row['item_id']
+            item_update['商品名'] = row['listed_name']
+            item_update['単価'] = row['sale_price']
+            item_update['購入期限'] = row['valid_till']
+
+            lst19 = get_lst19(row['item_id'])
+
+            item_update['商品イメージ1'] = lst19[0] if 0 < len(lst19) else None
+            item_update['商品イメージ2'] = lst19[1] if 1 < len(lst19) else None
+            item_update['商品イメージ3'] = lst19[2] if 2 < len(lst19) else None
+            item_update['商品イメージ4'] = lst19[3] if 3 < len(lst19) else None
+            item_update['商品イメージ5'] = lst19[4] if 4 < len(lst19) else None
+            item_update['商品イメージ6'] = lst19[5] if 5 < len(lst19) else None
+            item_update['商品イメージ7'] = lst19[6] if 6 < len(lst19) else None
+            item_update['商品イメージ8'] = lst19[7] if 7 < len(lst19) else None
+            item_update['商品イメージ9'] = lst19[8] if 8 < len(lst19) else None
+            item_update['商品イメージ10'] = lst19[9] if 9 < len(lst19) else None
+            item_update['商品イメージ11'] = lst19[10] if 10 < len(lst19) else None
+            item_update['商品イメージ12'] = lst19[11] if 11 < len(lst19) else None
+            item_update['商品イメージ13'] = lst19[12] if 12 < len(lst19) else None
+            item_update['商品イメージ14'] = lst19[13] if 13 < len(lst19) else None
+            item_update['商品イメージ15'] = lst19[14] if 14 < len(lst19) else None
+            item_update['商品イメージ16'] = lst19[15] if 15 < len(lst19) else None
+            item_update['商品イメージ17'] = lst19[16] if 16 < len(lst19) else None
+            item_update['商品イメージ18'] = lst19[17] if 17 < len(lst19) else None
+            item_update['商品イメージ19'] = lst19[18] if 18 < len(lst19) else None
+
+            writer.writerow(item_update)
+
 def create_new():
     create_new_colorsizes()
     create_new_items()
 
-create_new()
+items_to_be_updated()
