@@ -68,7 +68,6 @@ for row in rows:
 
         sql = "UPDATE Listed_items SET buyma_id = '" + bm_id + "', "\
             + "bm_control = '" + bm_control + "', "\
-            + "season = '" + season + "', "\
             + "valid_till = '" + valid_till + "' "\
             + " WHERE id = " + str(row['id'])
         cur.execute(sql)
