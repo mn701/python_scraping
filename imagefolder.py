@@ -320,7 +320,7 @@ def add_cklogo_top(image):
 def get_images(brand):
     images = []
     for filename in os.listdir():
-        if filename.endswith('.jpg') and filename.startswith('20'):
+        if (filename.endswith('.jpg') or filename.endswith('.jpg')) and filename.startswith('20'):
             images.append(filename)
 
     if len(images) > 0:
@@ -338,7 +338,7 @@ for filename in os.scandir(directory):
         if not os.path.exists('top'):
             os.mkdir('top')
             for filename in os.listdir():
-                if filename.endswith('-1.jpg'):
+                if filename.endswith('-1.jpg') or filename.endswith('-1.jpeg'):
                     shutil.move(filename, os.path.join('top', filename))
         if len([name for name in os.listdir() if os.path.isfile(name)]) > 19:
             if not os.path.exists('extra'):
