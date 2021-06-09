@@ -1,11 +1,10 @@
 from PIL import Image
 import os
 import shutil
-
+import logofolder
+#
 SQUARE_SIZE = 1536
 SQUARE_HALF = 768
-LOGO_SHOP = 'logo_200x200.png'
-PEDRO_LOGO = 'logo.png'
 
 def create_top(images, brand):
     new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
@@ -16,10 +15,12 @@ def create_top(images, brand):
     elif len(images) == 3:
         create_im_3_ver(images, brand, 100).save('100v.png')
         create_im_3_ver(images, brand, 200).save('200v.png')
-        create_im_3_hor(images, brand, 100).save('100h.png')
-        create_im_3_hor(images, brand, 200).save('200h.png')
-        create_im_3_hor(images, brand, 250).save('250h.png')
-        create_im_3_hor(images, brand, 300).save('300h.png')
+        create_im_3_hor(images, brand, 100, 0).save('100h.png')
+        create_im_3_hor(images, brand, 200, 0).save('200h.png')
+        create_im_3_hor(images, brand, 250, 0).save('250h0.png')
+        create_im_3_hor(images, brand, 250, 1).save('250h1.png')
+        create_im_3_hor(images, brand, 250, 2).save('250h2.png')
+        create_im_3_hor(images, brand, 300, 0).save('300h.png')
     elif len(images) == 2:
         create_im_2_ver(images, brand, 100).save('100v.png')
         create_im_2_ver(images, brand, 200).save('200v.png')
@@ -166,8 +167,12 @@ def create_im_2_hor(images, brand, crop_y_size=100):
 
     return im_with_logo
 
-def create_im_3_hor(images, brand, crop_y_size=100):
-    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE), (236, 236, 236))
+def create_im_3_hor(images, brand, crop_y_size, bg_color):
+    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
+    if bg_color == 1:
+        new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE), (236, 236, 236))
+    elif bg_color == 2:
+        new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE), (233, 229, 228))
     new_height = int(SQUARE_SIZE / 3)
     # Create a new folder to save resized images.
     os.makedirs('hresized', exist_ok=True)
@@ -179,7 +184,7 @@ def create_im_3_hor(images, brand, crop_y_size=100):
     # Create a list of coordinates.
     coords = []
     for top in [0, new_height, int(new_height * 2)]:
-        left = SQUARE_SIZE - new_width
+        left = 600
         coords.append((left, top))
 
     # Paste each quartersized image to new_im
@@ -250,7 +255,7 @@ def crop_bottom_square(im, crop_size):
 
 def add_shop_logo(image):
     # Adding logo image
-    logo_im = Image.open(LOGO_SHOP)
+    logo_im = Image.open(logofolder.LOGO_SHOP)
     logo_im = logo_im.resize((267, 267))
     logoWidth, logoHeight = logo_im.size
     width, height = image.size
@@ -262,7 +267,7 @@ def add_shop_logo(image):
 
 def add_logo_top(image):
     # Adding logo image
-    logo_im = Image.open(PEDRO_LOGO).convert("RGBA")
+    logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
     logo_im = logo_im.resize((600, 112))
     logoWidth, logoHeight = logo_im.size
     width, height = image.size
@@ -275,10 +280,10 @@ def add_logo_top(image):
 def add_logo_center(image, brand):
     # Adding logo image
     if brand == 2:
-        logo_im = Image.open(PEDRO_LOGO).convert("RGBA")
+        logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
         logo_im = logo_im.resize((600, 112))
     else:
-        logo_im = Image.open(CK_LOGO).convert("RGBA")
+        logo_im = Image.open(logofolder.CK_LOGO).convert("RGBA")
         logo_im = logo_im.resize((400, 400))
 
     logoWidth, logoHeight = logo_im.size
@@ -292,12 +297,12 @@ def add_logo_center(image, brand):
 def add_logo_left(image, brand):
     # Adding logo image
     if brand == 1:
-        logo_im = Image.open(CK_LOGO).convert("RGBA")
+        logo_im = Image.open(logofolder.CK_LOGO).convert("RGBA")
         logo_im = logo_im.resize((400, 400))
         # Paste logo on botom left
         image.paste(logo_im, (0, 568), logo_im)
     else:
-        logo_im = Image.open(PEDRO_LOGO).convert("RGBA")
+        logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
         logo_im = logo_im.resize((600, 112))
         # Paste logo on botom left
         image.paste(logo_im, (15, 712), logo_im)
@@ -306,7 +311,7 @@ def add_logo_left(image, brand):
 
 def add_cklogo_top(image):
     # Adding logo image
-    logo_im = Image.open(CK_LOGO).convert("RGBA")
+    logo_im = Image.open(logofolder.CK_LOGO).convert("RGBA")
     logo_im = logo_im.resize((400, 400))
     logoWidth, logoHeight = logo_im.size
     width, height = image.size
@@ -327,24 +332,52 @@ def get_images(brand):
         create_top(images, brand)
 
 # mask directory name
-directory = os.getcwd()
-for filename in os.scandir(directory):
-    if os.path.isdir(filename) and ('PW' in str(filename) or 'CK' in str(filename)):
-        os.chdir(filename.path)
-        if 'PW' in str(filename):
-            brand = 2
-        elif 'CK' in str(filename):
-            brand = 1
-        if not os.path.exists('top'):
-            os.mkdir('top')
-            for filename in os.listdir():
-                if filename.endswith('-1.jpg') or filename.endswith('-1.jpeg'):
-                    shutil.move(filename, os.path.join('top', filename))
-        if len([name for name in os.listdir() if os.path.isfile(name)]) > 19:
-            if not os.path.exists('extra'):
-                os.mkdir('extra')
-            for filename in os.listdir():
-                if filename.endswith('-8.jpg'):
-                    shutil.move(filename, os.path.join('extra', filename))
-        os.chdir('top')
-        get_images(brand)
+# directory = os.getcwd()
+# for filename in os.scandir(directory):
+#     if os.path.isdir(filename) and ('PW' in str(filename) or 'CK' in str(filename)):
+#         os.chdir(filename.path)
+#         if 'PW' in str(filename):
+#             brand = 2
+#         elif 'CK' in str(filename):
+#             brand = 1
+#         if not os.path.exists('top'):
+#             os.mkdir('top')
+#             for filename in os.listdir():
+#                 if filename.endswith('-1.jpg') or filename.endswith('-1.jpeg'):
+#                     shutil.move(filename, os.path.join('top', filename))
+#         if len([name for name in os.listdir() if os.path.isfile(name)]) > 19:
+#             if not os.path.exists('extra'):
+#                 os.mkdir('extra')
+#             for filename in os.listdir():
+#                 if filename.endswith('-8.jpg'):
+#                     shutil.move(filename, os.path.join('extra', filename))
+#         os.chdir('top')
+#         get_images(brand)
+
+conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd='wawa1234', db='mysql')
+
+cur = conn.cursor(pymysql.cursors.DictCursor)
+cur.execute("USE shop")
+
+sql = "SELECT * FROM Items WHERE Items.listed IN (3, 4)"
+cur.execute(sql)
+rows = cur.fetchall()
+for row in rows:
+    str_item_id = str(row['item_id'])
+    brand_id = str(row['brand_id'])
+    if os.path.isdir(str_item_id) == False:
+        os.mkdir(str_item_id)
+    sql = "SELECT Images.* FROM Images, Variations WHERE Images.variation_id = Variations.id AND Images.item_id = " \
+    + str_item_id + " ORDER BY Variations.color_code"
+    cur.execute(sql)
+    img_rows = cur.fetchall()
+    imglist = list()
+    for img_row in img_rows:
+        if img_row['img_name'].endswith('-1.jpg'):
+            filename = os.path.join(str_item_id, img_row['img_name'])
+            imgfile = urlretrieve(img_row['img_url'], filename)
+            # imglist.append(imgfile)
+
+    os.chdir(str_item_id)
+    get_images(brand_id)
+    os.chdir('..')
