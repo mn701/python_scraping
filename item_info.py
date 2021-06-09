@@ -252,7 +252,7 @@ def store_img_urls(item_id, variation_id, img_urls):
         exist = cur.fetchone()
         if exist is None:
             sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
-            ('" + item_id + "','" + str(id) + "','" + img_name + "','" + url + "')"
+            ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
             execute_sql(sql, 'img_urls', img_name)
 
 def get_items_from_list(lst, brand_id):
