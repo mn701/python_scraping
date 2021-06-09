@@ -197,7 +197,7 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, size
     except pymysql.err.IntegrityError:
             logging.warning("check color of: %s", sku)
 
-    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_familys, size_info) VALUES ('" \
+    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
     + availability + "', 1, '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
     execute_sql(sql, 'variation', sku)
