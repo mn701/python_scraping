@@ -118,7 +118,10 @@ def getItemInfo(url, brand_id):
                 item_id = cur.fetchone()[0]
                 store_variation(str(item_id), sku, url, color_code, size, availability, size_info)
                 fetch_other_buyers(str(item_id), sku_short)
-                store_img_urls(str(item_id), sku, color_code, img_urls)
+                cur.execute("SELECT id FROM Variations WHERE sku='" + sku + "'")
+                if(cur.rowcount > 0):
+                    variation_id = cur.fetchone()[0]
+                store_img_urls(str(item_id), str(variation_id), img_urls)
             save_imgs(img_urls, sku_short)
         else:
             logging.info('%s already exists', sku)
@@ -242,12 +245,12 @@ def size_from_details(lst):
             size_info[key] = val
     return size_info
 
-def store_img_urls(item_id, sku, color_code, img_urls):
-    cur.execute("SELECT id FROM Variations WHERE sku='" + sku + "'")
-    if(cur.rowcount > 0):
-        id = cur.fetchone()[0]
-        for url in img_urls:
-            img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
+def store_img_urls(item_id, variation_id, img_urls):
+    for url in img_urls:
+        img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
+        cur.execute("SELECT img_name FROM Images WHERE img_name ='" + img_name + "'")
+        exist = cur.fetchone()
+        if exist is None:
             sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
             ('" + item_id + "','" + str(id) + "','" + img_name + "','" + url + "')"
             execute_sql(sql, 'img_urls', img_name)
@@ -288,11 +291,11 @@ bsObj = BeautifulSoup(html, 'lxml')
 
 res_cont_div = bsObj.find('div', {"class":"result-count"}).find('span').string.strip()
 res_cont = int(re.sub(r'[^0-9]+', '', res_cont_div))
-print(res_cont)
-
-n = math.ceil(res_cont / 60)
-for i in range(n):
-    get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
+# print(res_cont)
+#
+# n = math.ceil(res_cont / 60)
+# for i in range(n):
+#     get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
 
 # different from item.py, scrawling sale pages
 # get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags")
@@ -313,17 +316,17 @@ for i in range(n):
 # get_ck_urls("https://www.charleskeith.com/sg/bags?page=8")
 
 # Enter Item manually
-# input_list = []
-# try:
-#     url = input("Enter url (enter 0 to end): ")
-#     while url != "0":
-#         input_list.append(url)
-#         url = input("Enter url (enter 0 to end): ")
-#     brand_id = input("Enter brand ID: ")
-# except:
-#   print(input_list)
-#
-# get_items_from_list(input_list, brand_id)
+input_list = []
+try:
+    url = input("Enter url (enter 0 to end): ")
+    while url != "0":
+        input_list.append(url)
+        url = input("Enter url (enter 0 to end): ")
+    brand_id = input("Enter brand ID: ")
+except:
+  print(input_list)
+
+get_items_from_list(input_list, brand_id)
 
 cur.close()
 conn.close()
