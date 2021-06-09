@@ -14,7 +14,7 @@ conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='roo
 
 cur = conn.cursor(pymysql.cursors.DictCursor)
 cur.execute("USE shop")
-cur.execute("SELECT * From Items WHERE listed = 4")
+cur.execute("SELECT * From Items WHERE listed IN (3, 4)")
 rows = cur.fetchall()
 print(cur.rowcount)
 for row in rows:

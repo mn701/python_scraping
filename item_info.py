@@ -116,8 +116,9 @@ def getItemInfo(url, brand_id):
             cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
             if(cur.rowcount > 0):
                 item_id = cur.fetchone()[0]
-                store_variation(str(item_id), sku, url, color_code, size, availability, img_urls, size_info)
+                store_variation(str(item_id), sku, url, color_code, size, availability, size_info)
                 fetch_other_buyers(str(item_id), sku_short)
+                store_img_urls(str(item_id), sku, color_code, img_urls)
             save_imgs(img_urls, sku_short)
         else:
             logging.info('%s already exists', sku)
@@ -176,7 +177,7 @@ def execute_sql(sql, category, key):
         logging.warning("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
-def store_variation(item_id, sku, url, color_code, size_name, availability, img_urls, size_info):
+def store_variation(item_id, sku, url, color_code, size_name, availability, size_info):
     sql = "select color_j from ck_colors where color_code = '" + color_code + "'"
     try:
         cur.execute(sql)
@@ -193,11 +194,9 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, img_
     except pymysql.err.IntegrityError:
             logging.warning("check color of: %s", sku)
 
-    str_list = ', '.join(img_urls)
-
-    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, img_urls, size_info) VALUES ('" \
+    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_familys, size_info) VALUES ('" \
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
-    + availability + "', 1, '" + str(color_j) + "', '" + str(color_family) + "', '" + str_list + "', '" + size_info + "')"
+    + availability + "', 1, '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
     execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
@@ -242,6 +241,16 @@ def size_from_details(lst):
             val = re.findall(myregex, str)[0][1]
             size_info[key] = val
     return size_info
+
+def store_img_urls(item_id, sku, color_code, img_urls):
+    cur.execute("SELECT id FROM Variations WHERE sku='" + sku + "'")
+    if(cur.rowcount > 0):
+        id = cur.fetchone()[0]
+        for url in img_urls:
+            img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
+            sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
+            ('" + item_id + "','" + str(id) + "','" + img_name + "','" + url + "')"
+            execute_sql(sql, 'img_urls', img_name)
 
 def get_items_from_list(lst, brand_id):
     for url in lst:

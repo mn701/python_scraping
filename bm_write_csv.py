@@ -16,16 +16,22 @@ CK_SHOP = 'Charles&Keith直営店'
 PW_SHOP = 'Pedro直営店'
 
 def get_lst19(item_id):
-    cur.execute("SELECT img_urls FROM variations where item_id = " + str(item_id) + " order by color_code")
+    cur.execute("SELECT id FROM variations where item_id = " + str(item_id) + " order by color_code")
     rows = cur.fetchall()
 
     lst_urls = list()
     lst19 = list()
 
     for row in rows:
-        urls = row['img_urls']
-        if urls != None:
-            lst_urls.append(urls.split(", "))
+        variation_id = row['id']
+        lst_var = list()
+        cur.execute("SELECT * FROM Images where variation_id = " + str(variation_id) + " order by img_name")
+        if(cur.rowcount > 0):
+            imgrows = cur.fetchall()
+            for img in imgrows:
+                if img['img_url'] != None:
+                lst_var.append(img['img_url'])
+            lst_urls.append(lst_var)
 
     num_colors = len(lst_urls) # 3
     sum = 0
