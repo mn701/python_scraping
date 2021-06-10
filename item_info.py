@@ -10,13 +10,15 @@ import webbrowser
 import logging
 import math
 import json
+import pw
 
 # #logging
 # log_format = '%(asctime)s %(filename)s: %(message)s'
 # logging.basicConfig(filename='item_info.log', level=logging.DEBUG, format=log_format)
 #
 # Connect MySQL
-pw = os.environ.get('mysql_password')
+# pw = os.environ.get('mysql_password')
+pw = pw.PW
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=pw, db='mysql', charset='utf8')
 cur = conn.cursor()
 cur.execute("USE shop")
