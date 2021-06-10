@@ -2,6 +2,8 @@ from PIL import Image
 import os
 import shutil
 import logofolder
+import pymysql
+from urllib.request import urlretrieve
 #
 SQUARE_SIZE = 1536
 SQUARE_HALF = 768
@@ -39,6 +41,7 @@ def create_im_1(image, brand, crop_size=0):
     resized = cropped_im.resize((SQUARE_SIZE, SQUARE_SIZE))
 
     # Add logo at top
+    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
     if brand == 1:
         new_im = add_cklogo_top(resized)
     elif brand == 2:
@@ -240,7 +243,16 @@ def crop_y_bottom(im, crop_size):
     crop_square = (0, y - x, x, y)
     square_im = im.crop(crop_square)
     sq_x, sq_y = square_im.size
-    crop_rectangle = (0, crop_size, sq_x, int(sq_y - crop_size*0.8))
+    crop_rectangle = (0, crop_size, sq_x, int(sq_y - 100))
+    cropped_im = square_im.crop(crop_rectangle)
+    return cropped_im
+
+def crop_y_bottom_4(im, crop_size):
+    x, y = im.size
+    crop_square = (0, y - x, x, y)
+    square_im = im.crop(crop_square)
+    sq_x, sq_y = square_im.size
+    crop_rectangle = (0, crop_size, sq_x, int(sq_y - crop_size*0.4))
     cropped_im = square_im.crop(crop_rectangle)
     return cropped_im
 
@@ -283,8 +295,8 @@ def add_logo_center(image, brand):
         logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
         logo_im = logo_im.resize((600, 112))
     else:
-        logo_im = Image.open(logofolder.CK_LOGO).convert("RGBA")
-        logo_im = logo_im.resize((400, 400))
+        logo_im = Image.open(logofolder.CK_THIN_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((1490, 100))
 
     logoWidth, logoHeight = logo_im.size
     width, height = image.size
@@ -354,30 +366,30 @@ def get_images(brand):
 #         os.chdir('top')
 #         get_images(brand)
 
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd='wawa1234', db='mysql')
-
-cur = conn.cursor(pymysql.cursors.DictCursor)
-cur.execute("USE shop")
-
-sql = "SELECT * FROM Items WHERE Items.listed IN (3, 4)"
-cur.execute(sql)
-rows = cur.fetchall()
-for row in rows:
-    str_item_id = str(row['item_id'])
-    brand_id = str(row['brand_id'])
-    if os.path.isdir(str_item_id) == False:
-        os.mkdir(str_item_id)
-    sql = "SELECT Images.* FROM Images, Variations WHERE Images.variation_id = Variations.id AND Images.item_id = " \
-    + str_item_id + " ORDER BY Variations.color_code"
-    cur.execute(sql)
-    img_rows = cur.fetchall()
-    imglist = list()
-    for img_row in img_rows:
-        if img_row['img_name'].endswith('-1.jpg'):
-            filename = os.path.join(str_item_id, img_row['img_name'])
-            imgfile = urlretrieve(img_row['img_url'], filename)
-            # imglist.append(imgfile)
-
-    os.chdir(str_item_id)
-    get_images(brand_id)
-    os.chdir('..')
+# conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd='wawa1234', db='mysql')
+#
+# cur = conn.cursor(pymysql.cursors.DictCursor)
+# cur.execute("USE shop")
+#
+# sql = "SELECT * FROM Items WHERE Items.listed IN (3, 4)"
+# cur.execute(sql)
+# rows = cur.fetchall()
+# for row in rows:
+#     str_item_id = str(row['item_id'])
+#     brand_id = row['brand_id']
+#     if os.path.isdir(str_item_id) == False:
+#         os.mkdir(str_item_id)
+#     sql = "SELECT Images.* FROM Images, Variations WHERE Images.variation_id = Variations.id AND Images.item_id = " \
+#     + str_item_id + " ORDER BY Variations.color_code"
+#     cur.execute(sql)
+#     img_rows = cur.fetchall()
+#     imglist = list()
+#     for img_row in img_rows:
+#         if img_row['img_name'].endswith('-1.jpg'):
+#             filename = os.path.join(str_item_id, img_row['img_name'])
+#             imgfile = urlretrieve(img_row['img_url'], filename)
+#             # imglist.append(imgfile)
+#
+#     os.chdir(str_item_id)
+#     get_images(brand_id)
+#     os.chdir('..')

@@ -10,15 +10,15 @@ import webbrowser
 import logging
 import math
 import json
-import pw
+import pwf
 
 # #logging
-# log_format = '%(asctime)s %(filename)s: %(message)s'
-# logging.basicConfig(filename='item_info.log', level=logging.DEBUG, format=log_format)
-#
+log_format = '%(asctime)s %(filename)s: %(message)s'
+logging.basicConfig(filename='item_info.log', level=logging.DEBUG, format=log_format)
+
 # Connect MySQL
 # pw = os.environ.get('mysql_password')
-pw = pw.PW
+pw = pwf.PW
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=pw, db='mysql', charset='utf8')
 cur = conn.cursor()
 cur.execute("USE shop")
@@ -200,9 +200,14 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, size
     except pymysql.err.IntegrityError:
             logging.warning("check color of: %s", sku)
 
+    # has_stock = 0 when the variation is unavailable
+    has_stock = 1
+    if availability != 'In Stock' and availability != 'Low in Stock':
+        has_stock = 0
+
     sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
-    + availability + "', 1, '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
+    + availability + "', str(has_stock), '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
     execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
