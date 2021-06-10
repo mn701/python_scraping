@@ -30,7 +30,7 @@ def get_lst19(item_id):
             imgrows = cur.fetchall()
             for img in imgrows:
                 if img['img_url'] != None:
-                lst_var.append(img['img_url'])
+                    lst_var.append(img['img_url'])
             lst_urls.append(lst_var)
 
     num_colors = len(lst_urls) # 3
@@ -290,8 +290,40 @@ def items_to_be_updated():
 
             writer.writerow(item_update)
 
+# Create CSV for new colorsizes to upload
+def colorsizes_update():
+    sql = "SELECT Variations.*, Items.listed, Listed_items.category FROM Items, Variations, Listed_items \
+    WHERE Items.item_id = Variations.item_id AND Listed_items.item_id = Variations.item_id AND \
+    Items.listed = 4 AND availability NOT IN ('Unavailable') AND is_listed IS NULL"
+    cur.execute(sql)
+    rows = cur.fetchall()
+
+    with open('./update/colorsizes.csv', 'w', newline='') as file:
+        fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', '幅', '高さ', 'マチ', '縦', '横', '厚み']
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            new_variation = {'商品管理番号': row['item_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
+            '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': row['has_stock']}
+
+            dict_size_info = dict()
+            if row['size_info'] != None:
+                dict_size_info = json.loads(row['size_info'])
+
+            if row['category'] == 3169 or row['category'] == 3111:
+                new_variation['縦'] = dict_size_info.get('Height')
+                new_variation['横'] = dict_size_info.get('Width')
+                new_variation['厚み'] = dict_size_info.get('Depth')
+            else:
+                new_variation['高さ'] = dict_size_info.get('Height')
+                new_variation['幅'] = dict_size_info.get('Width')
+                new_variation['マチ'] = dict_size_info.get('Depth')
+
+            writer.writerow(new_variation)
+
 def create_new():
     create_new_colorsizes()
     create_new_items()
 
 items_to_be_updated()
+colorsizes_update()
