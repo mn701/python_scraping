@@ -4,6 +4,7 @@ import shutil
 import logofolder
 import pymysql
 from urllib.request import urlretrieve
+import pwf
 #
 SQUARE_SIZE = 1536
 SQUARE_HALF = 768
@@ -366,7 +367,8 @@ def get_images(brand):
 #         os.chdir('top')
 #         get_images(brand)
 
-# conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd='wawa1234', db='mysql')
+# pw = pwf.PW
+# conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
 #
 # cur = conn.cursor(pymysql.cursors.DictCursor)
 # cur.execute("USE shop")
