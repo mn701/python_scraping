@@ -293,46 +293,49 @@ def get_ck_urls(url):
 
     get_items_from_list(new_urls, CK_ID)
 
-# fetch Pedro items
-html = urlopen("https://www.pedroshoes.com/sg/women/bags")
-bsObj = BeautifulSoup(html, 'lxml')
 
-res_cont_div = bsObj.find('div', {"class":"result-count"}).find('span').string.strip()
-res_cont = int(re.sub(r'[^0-9]+', '', res_cont_div))
-# print(res_cont)
-#
-# n = math.ceil(res_cont / 60)
-# for i in range(n):
-#     get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
+def item_pw():
+    # fetch Pedro items
+    html = urlopen("https://www.pedroshoes.com/sg/women/bags")
+    bsObj = BeautifulSoup(html, 'lxml')
+    res_cont_div = bsObj.find('div', {"class":"result-count"}).find('span').string.strip()
+    res_cont = int(re.sub(r'[^0-9]+', '', res_cont_div))
+    print(res_cont)
+    #
+    n = math.ceil(res_cont / 60)
+    for i in range(n):
+        get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
 
-# different from item.py, scrawling sale pages
-# get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags")
-# get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags?page=2")
+    # different from item.py, scrawling sale pages
+    # get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags")
+    # get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags?page=2")
 
 # fetch CK items
-# n = math.ceil(657 / 90)
-# for i in range(n):
-#     get_ck_urls("https://www.charleskeith.com/sg/bags?page=" + str(i + 1))
+def item_ck():
+    n = math.ceil(657 / 90)
+    # for i in range(n):
+    #     get_ck_urls("https://www.charleskeith.com/sg/bags?page=" + str(i + 1))
 
-# get_ck_urls("https://www.charleskeith.com/sg/bags")
-# get_ck_urls("https://www.charleskeith.com/sg/bags?page=2")
-# get_ck_urls("https://www.charleskeith.com/sg/bags?page=3")
-# get_ck_urls("https://www.charleskeith.com/sg/bags?page=4")
-# get_ck_urls("https://www.charleskeith.com/sg/bags?page=5")
-# get_ck_urls("https://www.charleskeith.com/sg/bags?page=6")
-# get_ck_urls("https://www.charleskeith.com/sg/bags?page=7")
-# get_ck_urls("https://www.charleskeith.com/sg/bags?page=8")
+    get_ck_urls("https://www.charleskeith.com/sg/bags")
+    get_ck_urls("https://www.charleskeith.com/sg/bags?page=2")
+    get_ck_urls("https://www.charleskeith.com/sg/bags?page=3")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=4")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=5")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=6")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=7")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=8")
 
 # Enter Item manually
-input_list = []
-try:
-    url = input("Enter url (enter 0 to end): ")
-    while url != "0":
-        input_list.append(url)
+def item_enter():
+    input_list = []
+    try:
         url = input("Enter url (enter 0 to end): ")
-    brand_id = input("Enter brand ID: ")
-except:
-  print(input_list)
+        while url != "0":
+            input_list.append(url)
+            url = input("Enter url (enter 0 to end): ")
+        brand_id = input("Enter brand ID: ")
+    except:
+      print(input_list)
 
 get_items_from_list(input_list, brand_id)
 
