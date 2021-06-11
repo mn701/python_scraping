@@ -1,9 +1,11 @@
 import pymysql
 import pandas as pd
 import os
+import pwf
 
 # connect to db
-pw = os.environ.get('mysql_password')
+pw = pwf.PW
+# pw = os.environ.get('mysql_password')
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
 # cur = conn.cursor()
 cur = conn.cursor(pymysql.cursors.DictCursor)
@@ -19,7 +21,10 @@ for row in rows:
     try:
         selected_variation = df.loc[(df['商品管理番号'] == item_id_str) & (df['色名称'] == col_name)]
         new_stock = selected_variation['在庫ステータス'].values[0]
-        sql = "UPDATE variations SET has_stock = '" + new_stock + "' WHERE id = '" + str(row['id']) + "'"
+        order = selected_variation['並び順'].values[0]
+        sql = "UPDATE variations SET has_stock = '" + new_stock + "', bm_order = '" + str(order) + \
+        "' WHERE id = '" + str(row['id']) + "'"
+
         cur.execute(sql)
         if row['is_listed'] == None:
             bm_col_family = selected_variation['色系統'].values[0]
@@ -53,21 +58,22 @@ for row in rows:
         supplier = selected_item['買付ショップ'].values[0]
 
         if bm_id != row['buyma_id']:
-            sql = "UPDATE Listed_items SET buyma_id = '" + bm_id + "', "\
+            sql = "UPDATE Listed_items SET buyma_id = '" + str(bm_id) + "', "\
                 + "listed_name = '" + listed_name + "', "\
-                + "sale_price = '" + sale_price + "', "\
-                + "bm_pcs = '" + bm_pcs + "', "\
-                + "bm_has_refprice = '" + bm_has_refprice + "', "\
-                + "bm_brand_id = '" + bm_brand_id + "', "\
-                + "category = '" + category + "', "\
-                + "season = '" + season + "', "\
-                + "tags = '" + tags + "', "\
+                + "sale_price = '" + str(sale_price) + "', "\
+                + "bm_pcs = '" + str(bm_pcs) + "', "\
+                + "bm_has_refprice = '" + str(bm_has_refprice) + "', "\
+                + "bm_brand_id = '" + str(bm_brand_id) + "', "\
+                + "category = '" + str(category) + "', "\
+                + "season = '" + str(season) + "', "\
+                + "tags = '" + str(tags) + "', "\
                 + "supplier = '" + supplier + "' "\
                 + " WHERE id = " + str(row['id'])
             cur.execute(sql)
 
         sql = "UPDATE Listed_items SET buyma_id = '" + bm_id + "', "\
             + "bm_control = '" + bm_control + "', "\
+            + "season = '" + season + "', "\
             + "valid_till = '" + valid_till + "' "\
             + " WHERE id = " + str(row['id'])
         cur.execute(sql)

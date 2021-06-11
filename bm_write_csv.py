@@ -4,8 +4,10 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 import os
 import json
+import pwf
 
 pw = os.environ.get('mysql_password')
+pw = pwf.PW
 conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
 cur = conn.cursor(pymysql.cursors.DictCursor)
 cur.execute("USE shop")
@@ -230,14 +232,27 @@ def back_stock():
     cur.execute(sql)
     rows = cur.fetchall()
 
+    # items to be re-listed
+    back_items_id = list()
     with open('./backtostock/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
+            back_items_id.append(row['item_id'])
             # update 在庫ステータス to 1
             writer.writerow({'商品ID': row['buyma_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
             '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': 1})
+
+    # remove duplicates
+    back_items_id = list(dict.fromkeys(back_items_id))
+    strlst = ','.join(str(x) for x in back_items_id)
+    sql = "SELECT * FROM Items, Listed_items WHERE Items.listed IN (0, 2) AND Items.item_id = Listed_items.item_id \
+    AND Listed_items.item_id IN (" + strlst + ")"
+    # print(sql)
+    cur.execute(sql)
+    rows = cur.fetchall()
+    update_items(rows, 0)
 
 def items_to_be_updated():
     # fetch items to be updated
@@ -245,12 +260,17 @@ def items_to_be_updated():
     WHERE listed = 4 AND Items.item_id = Listed_items.item_id"
     cur.execute(sql)
     rows = cur.fetchall()
+    update_items(rows, 1)
+
+def update_items(rows, with_img):
     with open('./update/items.csv', 'w', newline='') as file:
-        fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格', \
-        '商品イメージ1','商品イメージ2','商品イメージ3','商品イメージ4','商品イメージ5', \
-        '商品イメージ6','商品イメージ7','商品イメージ8','商品イメージ9','商品イメージ10', \
-        '商品イメージ11','商品イメージ12','商品イメージ13', '商品イメージ14','商品イメージ15', \
-        '商品イメージ16','商品イメージ17','商品イメージ18','商品イメージ19','商品イメージ20']
+        fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格']
+        if with_img == 1:
+            fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格', \
+            '商品イメージ1','商品イメージ2','商品イメージ3','商品イメージ4','商品イメージ5', \
+            '商品イメージ6','商品イメージ7','商品イメージ8','商品イメージ9','商品イメージ10', \
+            '商品イメージ11','商品イメージ12','商品イメージ13', '商品イメージ14','商品イメージ15', \
+            '商品イメージ16','商品イメージ17','商品イメージ18','商品イメージ19','商品イメージ20']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -264,29 +284,33 @@ def items_to_be_updated():
             item_update['商品管理番号'] = row['item_id']
             item_update['商品名'] = row['listed_name']
             item_update['単価'] = row['sale_price']
-            item_update['購入期限'] = row['valid_till']
 
-            lst19 = get_lst19(row['item_id'])
+            one_mon_later = date.today() + relativedelta(months=1)
+            valid_till = one_mon_later.strftime("%Y-%m-%d")
+            item_update['購入期限'] = valid_till
 
-            item_update['商品イメージ1'] = lst19[0] if 0 < len(lst19) else None
-            item_update['商品イメージ2'] = lst19[1] if 1 < len(lst19) else None
-            item_update['商品イメージ3'] = lst19[2] if 2 < len(lst19) else None
-            item_update['商品イメージ4'] = lst19[3] if 3 < len(lst19) else None
-            item_update['商品イメージ5'] = lst19[4] if 4 < len(lst19) else None
-            item_update['商品イメージ6'] = lst19[5] if 5 < len(lst19) else None
-            item_update['商品イメージ7'] = lst19[6] if 6 < len(lst19) else None
-            item_update['商品イメージ8'] = lst19[7] if 7 < len(lst19) else None
-            item_update['商品イメージ9'] = lst19[8] if 8 < len(lst19) else None
-            item_update['商品イメージ10'] = lst19[9] if 9 < len(lst19) else None
-            item_update['商品イメージ11'] = lst19[10] if 10 < len(lst19) else None
-            item_update['商品イメージ12'] = lst19[11] if 11 < len(lst19) else None
-            item_update['商品イメージ13'] = lst19[12] if 12 < len(lst19) else None
-            item_update['商品イメージ14'] = lst19[13] if 13 < len(lst19) else None
-            item_update['商品イメージ15'] = lst19[14] if 14 < len(lst19) else None
-            item_update['商品イメージ16'] = lst19[15] if 15 < len(lst19) else None
-            item_update['商品イメージ17'] = lst19[16] if 16 < len(lst19) else None
-            item_update['商品イメージ18'] = lst19[17] if 17 < len(lst19) else None
-            item_update['商品イメージ19'] = lst19[18] if 18 < len(lst19) else None
+            if with_img == 1:
+                lst19 = get_lst19(row['item_id'])
+
+                item_update['商品イメージ1'] = lst19[0] if 0 < len(lst19) else None
+                item_update['商品イメージ2'] = lst19[1] if 1 < len(lst19) else None
+                item_update['商品イメージ3'] = lst19[2] if 2 < len(lst19) else None
+                item_update['商品イメージ4'] = lst19[3] if 3 < len(lst19) else None
+                item_update['商品イメージ5'] = lst19[4] if 4 < len(lst19) else None
+                item_update['商品イメージ6'] = lst19[5] if 5 < len(lst19) else None
+                item_update['商品イメージ7'] = lst19[6] if 6 < len(lst19) else None
+                item_update['商品イメージ8'] = lst19[7] if 7 < len(lst19) else None
+                item_update['商品イメージ9'] = lst19[8] if 8 < len(lst19) else None
+                item_update['商品イメージ10'] = lst19[9] if 9 < len(lst19) else None
+                item_update['商品イメージ11'] = lst19[10] if 10 < len(lst19) else None
+                item_update['商品イメージ12'] = lst19[11] if 11 < len(lst19) else None
+                item_update['商品イメージ13'] = lst19[12] if 12 < len(lst19) else None
+                item_update['商品イメージ14'] = lst19[13] if 13 < len(lst19) else None
+                item_update['商品イメージ15'] = lst19[14] if 14 < len(lst19) else None
+                item_update['商品イメージ16'] = lst19[15] if 15 < len(lst19) else None
+                item_update['商品イメージ17'] = lst19[16] if 16 < len(lst19) else None
+                item_update['商品イメージ18'] = lst19[17] if 17 < len(lst19) else None
+                item_update['商品イメージ19'] = lst19[18] if 18 < len(lst19) else None
 
             writer.writerow(item_update)
 
@@ -321,9 +345,26 @@ def colorsizes_update():
 
             writer.writerow(new_variation)
 
+def new_all_unavailable():
+    sql = "SELECT item_id FROM Items WHERE listed IN (3, 4)"
+    cur.execute(sql)
+    item_rows = cur.fetchall()
+    items_cannot_list = list()
+    print("Items cannot be listed:")
+    for item_row in item_rows:
+        sql = "SELECT availability from Variations WHERE availability IN ( 'In Stock', 'Low in Stock' ) \
+        and item_id = " + str(item_row['item_id'])
+        cur.execute(sql)
+        row = cur.fetchone()
+        if row is None:
+            print (item_row['item_id'])
+            items_cannot_list.append(str(item_row['item_id']))
+
+
 def create_new():
     create_new_colorsizes()
     create_new_items()
 
-items_to_be_updated()
-colorsizes_update()
+def update():
+    items_to_be_updated()
+    colorsizes_update()
