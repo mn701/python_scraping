@@ -10,18 +10,60 @@ import webbrowser
 import logging
 import math
 import json
-import pwf
+from db_config_file import db_config
 
 # #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
 logging.basicConfig(filename='item_info.log', level=logging.DEBUG, format=log_format)
 
 # Connect MySQL
-# pw = os.environ.get('mysql_password')
-pw = pwf.PW
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd=pw, db='mysql', charset='utf8')
-cur = conn.cursor()
-cur.execute("USE shop")
+class DBHelper:
+    def __init__(self):
+        self.conn = pymysql.connect(host=db_config['host'],user=db_config['username'], password=db_config['password'], db=db_config['database'], cursorclass=pymysql.cursors.DictCursor)
+        self.cur = self.conn.cursor()
+
+    def __connect__(self):
+        self.conn = pymysql.connect(host=db_config['host'],user=db_config['username'], password=db_config['password'], db=db_config['database'], cursorclass=pymysql.cursors.DictCursor)
+        # self.conn = pymysql.connect(host=self.host, user=self.user, password=self.password, db=self.db, cursorclass=pymysql.cursors.DictCursor)
+        self.cur = self.conn.cursor()
+
+    def __disconnect__(self):
+        self.conn.close()
+
+    def fetchall(self, sql):
+        self.__connect__()
+        self.cur.execute(sql)
+        result = self.cur.fetchall()
+        self.__disconnect__()
+        return result
+
+    def fetchone(self, sql):
+        self.__connect__()
+        self.cur.execute(sql)
+        result = self.cur.fetchone()
+        # error
+        # self.__disconnect__()
+        return result
+
+    def rowcount(self, sql):
+        self.__connect__()
+        self.cur.execute(sql)
+        return self.cur.rowcount
+
+    def execute(self, sql, category, key):
+        # self.__connect__()
+        try:
+            if self.conn and self.cur:
+                self.cur.execute(sql)
+                self.conn.commit()
+                # logging.warning("%d", affected_count)
+                logging.info("inserted %s: %s", category, key)
+        except:
+            logging.error("execute failed: " + sql)
+            logging.warning("failed to insert %s: %s", category, key)
+            # self.__disconnect__()
+            return False
+        return True
 
 def getItemInfo(url, brand_id):
     try:
@@ -30,6 +72,16 @@ def getItemInfo(url, brand_id):
         return None
     try:
         bsObj = BeautifulSoup(html, 'lxml')
+
+        sku = ''
+        if len(bsObj.findAll("span", {"itemprop":{"productID"}})) > 0:
+            sku = bsObj.find("span", {"itemprop":{"productID"}}).get_text()
+        elif len(bsObj.findAll("span", {"class":{"product-id"}})) > 0:
+            sku = bsObj.find("span", {"class":{"product-id"}}).get_text()
+        if len(sku) == 0:
+            logging.info('check sku at %s.', url)
+            return None
+
         title = bsObj.h1.string.strip()
         title = title[:60]
         price = bsObj.find("meta", {"itemprop":{"price"}})['content']
@@ -103,36 +155,32 @@ def getItemInfo(url, brand_id):
         for img in arr_img:
             img_urls.append(get_imglocation(img))
 
-        cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "' OR url='" + url +"'")
-        exist = cur.fetchone()
-        if exist is None:
-            cur.execute("SELECT item_id, listed FROM items WHERE serial='" + sku_short + "'")
-            exist = cur.fetchone()
-            if exist is None:
-                ## add new item
+        dbc = DBHelper()
+        sql_var = "SELECT * FROM Variations WHERE sku = '" + sku + "' OR url='" + url + "'"
+        exist_var = dbc.fetchone(sql_var)
+        if exist_var is None:
+            sql_item = "SELECT item_id, listed FROM Items WHERE serial='" + sku_short + "'"
+            exist_item = dbc.fetchone(sql_item)
+            if exist_item is None:
+                # add new item
                 store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
             else:
-                if exist[1] != 3:
-                    cur.execute("UPDATE items set listed = 4 WHERE serial='" + sku_short + "'")
+                if exist_item['listed'] != 3:
+                    dbc.execute("UPDATE Items set listed = 4 WHERE serial='" + sku_short + "'")
                     conn.commit()
             ## add new variation
-            cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
-            if(cur.rowcount > 0):
-                item_id = cur.fetchone()[0]
+            exist_item = dbc.fetchone(sql_item)
+            if exist_item != None:
+                item_id = exist_item['item_id']
                 store_variation(str(item_id), sku, url, color_code, size, availability, size_info)
                 fetch_other_buyers(str(item_id), sku_short)
-                cur.execute("SELECT id FROM Variations WHERE sku='" + sku + "'")
-                if(cur.rowcount > 0):
-                    variation_id = cur.fetchone()[0]
-                store_img_urls(str(item_id), str(variation_id), img_urls)
-            save_imgs(img_urls, sku_short)
+
+                if(dbc.rowcount(sql_var) > 0):
+                    variation_id = dbc.fetchone(sql_var)['id']
+                    store_img_urls(str(item_id), str(variation_id), img_urls)
+            # save_imgs(img_urls, sku_short)
         else:
             logging.info('%s already exists', sku)
-
-        # opening URL in chrome browser
-        # chrome_path = 'open -a /Applications/Google\ Chrome.app %s'
-        # url = "https://www.buyma.com/r/-F1/" + sku_short
-        # webbrowser.get(chrome_path).open(url)
 
     except AttributeError as e:
         return None
@@ -162,41 +210,39 @@ def get_imgname(img):
 
 # Storing item info into  MySQL database
 def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season):
-    cur.execute("SELECT * FROM Items WHERE serial='" + serial + "'")
-    exist = cur.fetchone()
-    if exist is None:
-        description = description.replace("'", "''")
-        details = details.replace("'", "''")
-        sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed) VALUES ('" \
-        + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" \
-        + sale_info  + "', '" + description + "', '" + details + "','" + season + "', 3)"
-        execute_sql(sql, 'item', serial)
+    description = description.replace("'", "''")
+    details = details.replace("'", "''")
+    sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed) VALUES ('" \
+    + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" \
+    + sale_info  + "', '" + description + "', '" + details + "','" + season + "', 3)"
+    dbc = DBHelper()
+    dbc.execute(sql, 'item', serial)
 
-# execute insert-into and log result
-def execute_sql(sql, category, key):
-    try:
-        affected_count = cur.execute(sql)
-        conn.commit()
-        # logging.warning("%d", affected_count)
-        logging.info("inserted %s: %s", category, key)
-    except pymysql.err.IntegrityError:
-        logging.warning("failed to insert %s: %s", category, key)
+# # execute insert-into and log result
+# def execute_sql(sql, category, key):
+#     with DBHelper() as dbc:
+#         try:
+#             affected_count = dbc.execute(sql)
+#             dbc.commit()
+#             # logging.warning("%d", affected_count)
+#             logging.info("inserted %s: %s", category, key)
+#         except pymysql.err.IntegrityError:
+#             logging.warning("failed to insert %s: %s", category, key)
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name, availability, size_info):
+    dbc = DBHelper()
     sql = "select color_j from ck_colors where color_code = '" + color_code + "'"
     try:
-        cur.execute(sql)
-        row = cur.fetchone()
-        if row == None: color_j = ""
-        else: color_j = row[0]
+        row = dbc.fetchone(sql)
+        if row is None: color_j = ""
+        else: color_j = row['color_j']
         sql = "select bm_color_family from ck_colors where color_code = '" + color_code + "'"
-        cur.execute(sql)
-        row = cur.fetchone()
-        if row == None:
+        row = dbc.fetchone(sql)
+        if row is None:
             color_family = 0
         else:
-            color_family = row[0]
+            color_family = row['bm_color_family']
     except pymysql.err.IntegrityError:
             logging.warning("check color of: %s", sku)
 
@@ -208,12 +254,14 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, size
     sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
     + availability + "', " + str(has_stock) + ", '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
-    execute_sql(sql, 'variation', sku)
+
+    dbc.execute(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
 def fetch_other_buyers(item_id, serial):
-    cur.execute("SELECT * FROM Buyer_price WHERE item_id ='" + item_id + "'")
-    exist = cur.fetchone()
+    dbc = DBHelper()
+    sql = "SELECT * FROM buyer_price WHERE item_id ='" + item_id + "'"
+    exist = dbc.fetchone(sql)
     if exist is None:
         url = "https://www.buyma.com/r/-F1/" + serial
         try:
@@ -231,16 +279,17 @@ def fetch_other_buyers(item_id, serial):
                 buyer_price = div_product_name.find('a')['price']
                 buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
 
-                cur.execute("SELECT * FROM Buyer_price WHERE url ='" + buyer_item + "'")
-                exist = cur.fetchone()
+                sql = "SELECT * FROM buyer_price WHERE url ='" + buyer_item + "'"
+                exist = dbc.fetchone(sql)
                 if exist is None:
                     store_buyer_price(item_id, buyer_name, buyer_price, buyer_item)
         except AttributeError as e:
             return None
 
 def store_buyer_price(item_id, buyer, price, url):
-    sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
-    execute_sql(sql, 'buyer_price', url)
+    sql =  "INSERT INTO buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
+    dbc = DBHelper()
+    dbc.execute(sql, 'buyer_price', url)
 
 def size_from_details(lst):
     size_info = {}
@@ -254,14 +303,16 @@ def size_from_details(lst):
     return size_info
 
 def store_img_urls(item_id, variation_id, img_urls):
+    dbc = DBHelper()
     for url in img_urls:
         img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
-        cur.execute("SELECT img_name FROM Images WHERE img_name ='" + img_name + "'")
-        exist = cur.fetchone()
+        sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
+        exist = dbc.fetchone(sql)
         if exist is None:
             sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
             ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
-            execute_sql(sql, 'img_urls', img_name)
+            dbc = DBHelper()
+            dbc.execute(sql, 'img_urls', img_name)
 
 def get_items_from_list(lst, brand_id):
     for url in lst:
@@ -316,12 +367,12 @@ def item_ck():
     # for i in range(n):
     #     get_ck_urls("https://www.charleskeith.com/sg/bags?page=" + str(i + 1))
 
-    get_ck_urls("https://www.charleskeith.com/sg/bags")
-    get_ck_urls("https://www.charleskeith.com/sg/bags?page=2")
-    get_ck_urls("https://www.charleskeith.com/sg/bags?page=3")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=2")
+    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=3")
     # get_ck_urls("https://www.charleskeith.com/sg/bags?page=4")
     # get_ck_urls("https://www.charleskeith.com/sg/bags?page=5")
-    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=6")
+    get_ck_urls("https://www.charleskeith.com/sg/bags?page=6")
     # get_ck_urls("https://www.charleskeith.com/sg/bags?page=7")
     # get_ck_urls("https://www.charleskeith.com/sg/bags?page=8")
 
@@ -336,8 +387,3 @@ def item_enter():
         brand_id = input("Enter brand ID: ")
     except:
       print(input_list)
-
-get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=3")
-
-cur.close()
-conn.close()
