@@ -48,9 +48,23 @@ class DBHelper:
     def rowcount(self, sql):
         self.__connect__()
         self.cur.execute(sql)
+        self.__disconnect__()
         return self.cur.rowcount
 
-    def execute(self, sql, category, key):
+    def execute(self, sql):
+        self.__connect__()
+        try:
+            if self.conn and self.cur:
+                self.cur.execute(sql)
+                self.conn.commit()
+        except:
+            logging.error("execute failed: " + sql)
+            # error already disconnected
+            # self.__disconnect__()
+            return False
+        return True
+
+    def execute_insert(self, sql, category, key):
         # self.__connect__()
         try:
             if self.conn and self.cur:
@@ -61,9 +75,36 @@ class DBHelper:
         except:
             logging.error("execute failed: " + sql)
             logging.warning("failed to insert %s: %s", category, key)
+            # error already disconnected
             # self.__disconnect__()
             return False
         return True
+
+    # query Items table for sku_short
+    def check_item_exists(self, serial):
+        sql = "SELECT item_id FROM Items WHERE serial='" + serial + "'"
+        return self.rowcount(sql) > 0
+
+    # query Variations table for sku
+    def check_variation_exists(self, sku):
+        sql = "SELECT * FROM Variations WHERE sku = '" + sku + "'"
+        return self.rowcount(sql) > 0
+
+    # fetch item_id from serial
+    def get_item_id(self, serial):
+        sql = "SELECT item_id FROM Items WHERE serial='" + serial + "'"
+        exist = self.fetchone(sql)
+        if exist != None:
+            return exist['item_id']
+        return None
+
+    # fetch id from sku
+    def get_variation_id(self, sku):
+        sql = "SELECT id FROM Variations WHERE sku = '" + sku + "'"
+        exist = self.fetchone(sql)
+        if exist != None:
+            return exist['id']
+        return None
 
 def getItemInfo(url, brand_id):
     try:
@@ -80,6 +121,11 @@ def getItemInfo(url, brand_id):
             sku = bsObj.find("span", {"class":{"product-id"}}).get_text()
         if len(sku) == 0:
             logging.info('check sku at %s.', url)
+            return None
+
+        # check if sku already exists in Variations table
+        if check_variation_exists(sku, url):
+            logging.info('%s already exists', sku)
             return None
 
         title = bsObj.h1.string.strip()
@@ -155,35 +201,17 @@ def getItemInfo(url, brand_id):
         for img in arr_img:
             img_urls.append(get_imglocation(img))
 
-        dbc = DBHelper()
-        sql_var = "SELECT * FROM Variations WHERE sku = '" + sku + "' OR url='" + url + "'"
-        exist_var = dbc.fetchone(sql_var)
-        if exist_var is None:
-            sql_item = "SELECT item_id, listed FROM Items WHERE serial='" + sku_short + "'"
-            exist_item = dbc.fetchone(sql_item)
-            if exist_item is None:
-                # add new item
-                store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
-            else:
-                if exist_item['listed'] != 3:
-                    dbc.execute("UPDATE Items set listed = 4 WHERE serial='" + sku_short + "'")
-                    conn.commit()
-            ## add new variation
-            exist_item = dbc.fetchone(sql_item)
-            if exist_item != None:
-                item_id = exist_item['item_id']
-                store_variation(str(item_id), sku, url, color_code, size, availability, size_info)
-                fetch_other_buyers(str(item_id), sku_short)
-
-                if(dbc.rowcount(sql_var) > 0):
-                    variation_id = dbc.fetchone(sql_var)['id']
-                    store_img_urls(str(item_id), str(variation_id), img_urls)
-            # save_imgs(img_urls, sku_short)
-        else:
-            logging.info('%s already exists', sku)
+        process_item_data(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+        process_variation_data(sku_short, sku, url, color_code, size, availability, size_info, img_urls)
 
     except AttributeError as e:
         return None
+
+# query Variations table for sku
+def check_variation_exists(sku, url):
+    dbc = DBHelper()
+    sql = "SELECT * FROM Variations WHERE sku = '" + sku + "' OR url='" + url + "'"
+    return dbc.rowcount(sql) > 0
 
 # download images in the folder
 def save_imgs(imglocations, folderName):
@@ -208,6 +236,18 @@ def get_imgname(img):
     imglocation = get_imglocation(img)
     return re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
 
+def process_item_data(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season):
+    dbc = DBHelper()
+    sql_item = "SELECT item_id, listed FROM Items WHERE serial='" + sku_short + "'"
+    exist_item = dbc.fetchone(sql_item)
+    # if sku_short not in Items table
+    if exist_item is None:
+        # add new item
+        store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+    else:
+        if exist_item['listed'] != 3:
+            dbc.execute("UPDATE Items set listed = 4 WHERE serial='" + sku_short + "'")
+
 # Storing item info into  MySQL database
 def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season):
     description = description.replace("'", "''")
@@ -216,36 +256,27 @@ def store_item(brand_id, serial, url, item_name, price, original_price, sale_inf
     + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" \
     + sale_info  + "', '" + description + "', '" + details + "','" + season + "', 3)"
     dbc = DBHelper()
-    dbc.execute(sql, 'item', serial)
+    dbc.execute_insert(sql, 'item', serial)
 
-# # execute insert-into and log result
-# def execute_sql(sql, category, key):
-#     with DBHelper() as dbc:
-#         try:
-#             affected_count = dbc.execute(sql)
-#             dbc.commit()
-#             # logging.warning("%d", affected_count)
-#             logging.info("inserted %s: %s", category, key)
-#         except pymysql.err.IntegrityError:
-#             logging.warning("failed to insert %s: %s", category, key)
+def process_variation_data(serial, sku, url, color_code, size, availability, size_info, img_urls):
+    dbc = DBHelper()
+    if dbc.check_item_exists(serial):
+        item_id = dbc.get_item_id(serial)
+
+        store_variation(str(item_id), sku, url, color_code, size, availability, size_info)
+        fetch_other_buyers(str(item_id), serial)
+
+        if dbc.check_variation_exists(sku):
+            variation_id = dbc.get_variation_id(sku)
+            # save_imgs(img_urls, sku_short)
+            store_img_urls(str(item_id), str(variation_id), img_urls)
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name, availability, size_info):
     dbc = DBHelper()
-    sql = "select color_j from ck_colors where color_code = '" + color_code + "'"
-    try:
-        row = dbc.fetchone(sql)
-        if row is None: color_j = ""
-        else: color_j = row['color_j']
-        sql = "select bm_color_family from ck_colors where color_code = '" + color_code + "'"
-        row = dbc.fetchone(sql)
-        if row is None:
-            color_family = 0
-        else:
-            color_family = row['bm_color_family']
-    except pymysql.err.IntegrityError:
-            logging.warning("check color of: %s", sku)
 
+    color_j = get_color_j(color_code)
+    color_family = get_color_family(color_code)
     # has_stock = 0 when the variation is unavailable
     has_stock = 1
     if availability != 'In Stock' and availability != 'Low in Stock':
@@ -255,7 +286,33 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, size
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
     + availability + "', " + str(has_stock) + ", '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
 
-    dbc.execute(sql, 'variation', sku)
+    dbc.execute_insert(sql, 'variation', sku)
+
+# fetch color name in Japanese from table "ck_colors"
+def get_color_j(color_code):
+    dbc = DBHelper()
+    sql = "select color_j from ck_colors where color_code = '" + color_code + "'"
+    color_j = ""
+    try:
+        row = dbc.fetchone(sql)
+        if row is None: color_j = ""
+        else: color_j = row['color_j']
+    except pymysql.err.IntegrityError:
+            logging.warning("check color of: %s", sku)
+    return color_j
+
+# fetch BM color family from table "ck_colors"
+def get_color_family(color_code):
+    dbc = DBHelper()
+    sql = "select bm_color_family from ck_colors where color_code = '" + color_code + "'"
+    row = dbc.fetchone(sql)
+    color_family = 0
+    if row is None:
+        color_family = 0
+        logging.warning("check color of: %s", sku)
+    else:
+        color_family = row['bm_color_family']
+    return color_family
 
 # crawl Buyma and get info about the same product from other buyers
 def fetch_other_buyers(item_id, serial):
@@ -289,7 +346,7 @@ def fetch_other_buyers(item_id, serial):
 def store_buyer_price(item_id, buyer, price, url):
     sql =  "INSERT INTO buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
     dbc = DBHelper()
-    dbc.execute(sql, 'buyer_price', url)
+    dbc.execute_insert(sql, 'buyer_price', url)
 
 def size_from_details(lst):
     size_info = {}
@@ -312,7 +369,7 @@ def store_img_urls(item_id, variation_id, img_urls):
             sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
             ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
             dbc = DBHelper()
-            dbc.execute(sql, 'img_urls', img_name)
+            dbc.execute_insert(sql, 'img_urls', img_name)
 
 def get_items_from_list(lst, brand_id):
     for url in lst:
@@ -344,8 +401,33 @@ def get_ck_urls(url):
 
     get_items_from_list(new_urls, CK_ID)
 
+def get_pedro_urls(url):
+    html = urlopen(url)
+    logging.info("crawling %s: ", url)
+    bsObj = BeautifulSoup(html, 'lxml')
+    base = "https://www.pedroshoes.com"
+    new_urls = list()
+    for div in bsObj.find_all(class_='active'):
+        a = div.find('a', {"class":"full-pdp-link"})
+        new_urls.append(base + a['href'])
+
+    return new_urls
+
+def get_ck_urls(url):
+    html = urlopen(url)
+    logging.info("crawling %s: ", url)
+    bsObj = BeautifulSoup(html, 'lxml')
+    base = "https://www.charleskeith.com"
+    new_urls = list()
+    for div in bsObj.find_all(class_='active'):
+        a = div.find('a', {"class":"full-pdp-link"})
+        new_urls.append(base + a['href'])
+
+    return new_urls
 
 def item_pw():
+    #brand_id
+    PEDRO_ID = '2'
     # fetch Pedro items
     html = urlopen("https://www.pedroshoes.com/sg/women/bags")
     bsObj = BeautifulSoup(html, 'lxml')
@@ -354,8 +436,11 @@ def item_pw():
     print(res_cont)
     #
     n = math.ceil(res_cont / 60)
+    urls = list()
     for i in range(n):
-        get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
+        urls = urls + get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=" + str(i + 1))
+
+    get_items_from_list(urls, PEDRO_ID)
 
     # different from item.py, scrawling sale pages
     # get_pedro_urls("https://www.pedroshoes.com/sg/sale/women/bags")
@@ -363,18 +448,24 @@ def item_pw():
 
 # fetch CK items
 def item_ck():
-    n = math.ceil(657 / 90)
-    # for i in range(n):
-    #     get_ck_urls("https://www.charleskeith.com/sg/bags?page=" + str(i + 1))
+    # brand_id
+    CK_ID = '1'
 
-    # get_ck_urls("https://www.charleskeith.com/sg/bags")
-    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=2")
-    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=3")
-    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=4")
-    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=5")
-    get_ck_urls("https://www.charleskeith.com/sg/bags?page=6")
-    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=7")
-    # get_ck_urls("https://www.charleskeith.com/sg/bags?page=8")
+    n = math.ceil(657 / 90)
+    urls = list()
+    # for i in range(n):
+    #     urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=" + str(i + 1))
+
+    # urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags")
+    # urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=2")
+    # urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=3")
+    # urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=4")
+    # urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=5")
+    # urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=6")
+    urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=7")
+    urls = urls + get_ck_urls("https://www.charleskeith.com/sg/bags?page=8")
+
+    get_items_from_list(urls, CK_ID)
 
 # Enter Item manually
 def item_enter():
