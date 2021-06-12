@@ -106,13 +106,13 @@ def getItemInfo(url, brand_id):
         cur.execute("SELECT * FROM Variations WHERE sku='" + sku + "' OR url='" + url +"'")
         exist = cur.fetchone()
         if exist is None:
-            cur.execute("SELECT item_id FROM items WHERE serial='" + sku_short + "'")
+            cur.execute("SELECT item_id, listed FROM items WHERE serial='" + sku_short + "'")
             exist = cur.fetchone()
             if exist is None:
                 ## add new item
                 store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
             else:
-                if exist[14] != 3:
+                if exist[1] != 3:
                     cur.execute("UPDATE items set listed = 4 WHERE serial='" + sku_short + "'")
                     conn.commit()
             ## add new variation
@@ -207,7 +207,7 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, size
 
     sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
     + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
-    + availability + "', str(has_stock), '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
+    + availability + "', " + str(has_stock) + ", '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
     execute_sql(sql, 'variation', sku)
 
 # crawl Buyma and get info about the same product from other buyers
@@ -244,12 +244,12 @@ def store_buyer_price(item_id, buyer, price, url):
 
 def size_from_details(lst):
     size_info = {}
-    for str in lst:
+    for detail in lst:
         myregex = '(\w+)\s\(cm\):\s(\d+(\.\d+)?)'
-        matched = re.match(myregex, str)
+        matched = re.match(myregex, detail)
         if matched:
-            key = re.findall(myregex, str)[0][0]
-            val = re.findall(myregex, str)[0][1]
+            key = re.findall(myregex, detail)[0][0]
+            val = re.findall(myregex, detail)[0][1]
             size_info[key] = val
     return size_info
 
@@ -337,7 +337,7 @@ def item_enter():
     except:
       print(input_list)
 
-get_items_from_list(input_list, brand_id)
+get_pedro_urls("https://www.pedroshoes.com/sg/women/bags?page=3")
 
 cur.close()
 conn.close()
