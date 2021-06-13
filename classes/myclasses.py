@@ -1,5 +1,7 @@
 import pymysql
 import logging
+from bs4 import BeautifulSoup
+import requests
 from .db_config_file import db_config
 
 # #logging
@@ -118,6 +120,20 @@ class DBHelper:
         sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + \
         buyer_price.item_id + "','" + buyer_price.buyer + "','" + buyer_price.price + "','" + buyer_price.url + "')"
         self.execute_insert(sql, 'buyer_price', buyer_price.url)
+
+class Crawler:
+    def getPage(self, url):
+        try:
+            req = requests.get(url)
+        except requests.exceptions.RequestException:
+            return None
+        return BeautifulSoup(req.text, 'html.parser')
+
+    def safeGet(self, pageObj, selector):
+        childObj = pageObj.select(selector)
+        if childObj is not None and len(childObj) > 0:
+            return childObj[0].get_text().strip()
+        return ''
 
 # Holds information about an Item  -> tbl Items
 class Item:
