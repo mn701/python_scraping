@@ -11,7 +11,7 @@ import logging
 import math
 import json
 from db_config_file import db_config
-from classes.myclasses import Item, Variation, Buyer_price
+from classes.myclasses import *
 
 # #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
