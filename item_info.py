@@ -10,7 +10,7 @@ import webbrowser
 import logging
 import math
 import json
-from db_config_file import db_config
+# from db_config_file import db_config
 from classes.myclasses import *
 
 # #logging
@@ -116,7 +116,7 @@ class DBHelper:
         self.execute_insert(sql, 'item', item.serial)
 
     # insert a new variation of an item into Variations table
-    # param: a Variaion object
+    # param: a Variationobject
     def insert_variation(self, variation):
         sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
         + str(variation.item_id) + "','" + variation.sku + "','" + variation.url + "','" + variation.color_code + "','" + variation.size_name + "','" \
@@ -266,28 +266,30 @@ def process_item_data(brand_id, sku_short, url, title, price, original_price, sa
     exist_item = dbc.fetchone(sql_item)
     # if sku_short not in Items table
     if exist_item is None:
-        # add new item
-        store_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+        # create a new Item object
+        item = create_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
+        # save the Item object in db
+        dbc.insert_item(item)
     else:
         if exist_item['listed'] != 3:
             dbc.execute("UPDATE Items set listed = 4 WHERE serial='" + sku_short + "'")
 
-# Storing item info into  MySQL database
-def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season):
+# Create a new Item object from params. Return an Item object
+def create_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season):
     description = description.replace("'", "''")
     details = details.replace("'", "''")
     # create an Item object
     item = Item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, 3)
-
-    dbc = DBHelper()
-    dbc.insert_item(item)
+    return item
 
 def process_variation_data(serial, sku, url, color_code, size, availability, size_info, img_urls):
     dbc = DBHelper()
     if dbc.check_item_exists(serial):
         item_id = dbc.get_item_id(serial)
 
-        store_variation(item_id, sku, url, color_code, size, availability, size_info)
+        variation = create_variation(item_id, sku, url, color_code, size, availability, size_info)
+        # insert Variationobj into Variations table
+        dbc.insert_variation(variation)
         fetch_other_buyers(str(item_id), serial)
 
         if dbc.check_variation_exists(sku):
@@ -295,8 +297,8 @@ def process_variation_data(serial, sku, url, color_code, size, availability, siz
             # save_imgs(img_urls, sku_short)
             store_img_urls(str(item_id), str(variation_id), img_urls)
 
-# Storing item variation into Variations table
-def store_variation(item_id, sku, url, color_code, size_name, availability, size_info):
+# Create a new Variationobject. Return a Variationobject
+def create_variation(item_id, sku, url, color_code, size_name, availability, size_info):
     # fetch color information from tbl Ck_colors
     bm_col_name = get_color_j(color_code)
     bm_col_family = get_color_family(color_code)
@@ -305,12 +307,10 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, size
     if availability != 'In Stock' and availability != 'Low in Stock':
         has_stock = 0
 
-    # create a Variaion object
+    # create a Variationobject
     variation = Variation(item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info)
 
-    # insert variaion obj into Variations table
-    dbc = DBHelper()
-    dbc.insert_variation(variation)
+    return variation
 
 # fetch color name in Japanese from table "ck_colors"
 def get_color_j(color_code):
