@@ -90,7 +90,7 @@ class DBHelper:
         sql = "SELECT * FROM Variations WHERE sku = '" + sku + "'"
         return self.rowcount(sql) > 0
 
-    # fetch item_id from serial
+    # fetch item_id of serial from Items tbl
     def get_item_id(self, serial):
         sql = "SELECT item_id FROM Items WHERE serial='" + serial + "'"
         exist = self.fetchone(sql)
@@ -98,7 +98,7 @@ class DBHelper:
             return exist['item_id']
         return None
 
-    # fetch id from sku
+    # fetch id from Variations tbl for sku
     def get_variation_id(self, sku):
         sql = "SELECT id FROM Variations WHERE sku = '" + sku + "'"
         exist = self.fetchone(sql)
@@ -106,6 +106,21 @@ class DBHelper:
             return exist['id']
         return None
 
+    # insert a new item into Items table
+    # param: an Item object
+    def insert_item(self, item):
+        sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed) VALUES ('" \
+        + str(item.brand_id) + "', '" + item.serial + "', '" + item.url + "', '" + item.item_name  + "', '" + str(item.price)  + "', '" + str(item.original_price)  + "', '" \
+        + item.sale_info  + "', '" + item.description + "', '" + item.details + "', '" + item.season + "', 3)"
+        self.execute_insert(sql, 'item', item.serial)
+
+    # insert a new variation of an item into Variations table
+    # param: a Variaion object
+    def insert_variation(self, variation):
+        sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
+        + str(variation.item_id) + "','" + variation.sku + "','" + variation.url + "','" + variation.color_code + "','" + variation.size_name + "','" \
+        + variation.availability + "', " + str(variation.has_stock) + ", '" + str(variation.bm_col_name) + "', '" + str(variation.bm_col_family) + "', '" + variation.size_info + "')"
+        self.execute_insert(sql, 'variation', variation.sku)
 
 # Holds information about an Item  -> tbl Items
 class Item:
@@ -282,18 +297,18 @@ def process_item_data(brand_id, sku_short, url, title, price, original_price, sa
 def store_item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season):
     description = description.replace("'", "''")
     details = details.replace("'", "''")
-    sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed) VALUES ('" \
-    + brand_id + "','" + serial + "','" + url + "','" + item_name  + "','" + price  + "','" + original_price  + "','" \
-    + sale_info  + "', '" + description + "', '" + details + "','" + season + "', 3)"
+    # create an Item object
+    item = Item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, 3)
+
     dbc = DBHelper()
-    dbc.execute_insert(sql, 'item', serial)
+    dbc.insert_item(item)
 
 def process_variation_data(serial, sku, url, color_code, size, availability, size_info, img_urls):
     dbc = DBHelper()
     if dbc.check_item_exists(serial):
         item_id = dbc.get_item_id(serial)
 
-        store_variation(str(item_id), sku, url, color_code, size, availability, size_info)
+        store_variation(item_id, sku, url, color_code, size, availability, size_info)
         fetch_other_buyers(str(item_id), serial)
 
         if dbc.check_variation_exists(sku):
@@ -305,18 +320,18 @@ def process_variation_data(serial, sku, url, color_code, size, availability, siz
 def store_variation(item_id, sku, url, color_code, size_name, availability, size_info):
     dbc = DBHelper()
 
-    color_j = get_color_j(color_code)
-    color_family = get_color_family(color_code)
+    bm_col_name = get_color_j(color_code)
+    bm_col_family = get_color_family(color_code)
     # has_stock = 0 when the variation is unavailable
     has_stock = 1
     if availability != 'In Stock' and availability != 'Low in Stock':
         has_stock = 0
 
-    sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
-    + item_id + "','" + sku + "','" + url + "','" + color_code + "','" + size_name + "','" \
-    + availability + "', " + str(has_stock) + ", '" + str(color_j) + "', '" + str(color_family) + "', '" + size_info + "')"
+    # create a Variaion object
+    variation = Variation(item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info)
 
-    dbc.execute_insert(sql, 'variation', sku)
+    # insert variaion obj into Variations table
+    dbc.insert_variation(variation)
 
 # fetch color name in Japanese from table "ck_colors"
 def get_color_j(color_code):
