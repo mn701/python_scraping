@@ -17,119 +17,6 @@ from classes.myclasses import *
 log_format = '%(asctime)s %(filename)s: %(message)s'
 logging.basicConfig(filename='log/item_info.log', level=logging.DEBUG, format=log_format)
 
-# Connect MySQL
-class DBHelper:
-    def __init__(self):
-        self.conn = pymysql.connect(host=db_config['host'],user=db_config['username'], password=db_config['password'], db=db_config['database'], cursorclass=pymysql.cursors.DictCursor)
-        self.cur = self.conn.cursor()
-
-    def __connect__(self):
-        self.conn = pymysql.connect(host=db_config['host'],user=db_config['username'], password=db_config['password'], db=db_config['database'], cursorclass=pymysql.cursors.DictCursor)
-        # self.conn = pymysql.connect(host=self.host, user=self.user, password=self.password, db=self.db, cursorclass=pymysql.cursors.DictCursor)
-        self.cur = self.conn.cursor()
-
-    def __disconnect__(self):
-        self.conn.close()
-
-    def fetchall(self, sql):
-        self.__connect__()
-        self.cur.execute(sql)
-        result = self.cur.fetchall()
-        self.__disconnect__()
-        return result
-
-    def fetchone(self, sql):
-        self.__connect__()
-        self.cur.execute(sql)
-        result = self.cur.fetchone()
-        # error
-        # self.__disconnect__()
-        return result
-
-    def rowcount(self, sql):
-        self.__connect__()
-        self.cur.execute(sql)
-        self.__disconnect__()
-        return self.cur.rowcount
-
-    def execute(self, sql):
-        self.__connect__()
-        try:
-            if self.conn and self.cur:
-                self.cur.execute(sql)
-                self.conn.commit()
-        except:
-            logging.error("execute failed: " + sql)
-            # error already disconnected
-            # self.__disconnect__()
-            return False
-        return True
-
-    def execute_insert(self, sql, category, key):
-        # self.__connect__()
-        try:
-            if self.conn and self.cur:
-                self.cur.execute(sql)
-                self.conn.commit()
-                # logging.warning("%d", affected_count)
-                logging.info("inserted %s: %s", category, key)
-        except:
-            logging.error("execute failed: " + sql)
-            logging.warning("failed to insert %s: %s", category, key)
-            # error already disconnected
-            # self.__disconnect__()
-            return False
-        return True
-
-    # query Items table for sku_short
-    def check_item_exists(self, serial):
-        sql = "SELECT item_id FROM Items WHERE serial='" + serial + "'"
-        return self.rowcount(sql) > 0
-
-    # query Variations table for sku
-    def check_variation_exists(self, sku):
-        sql = "SELECT * FROM Variations WHERE sku = '" + sku + "'"
-        return self.rowcount(sql) > 0
-
-    # fetch item_id of serial from Items tbl
-    def get_item_id(self, serial):
-        sql = "SELECT item_id FROM Items WHERE serial='" + serial + "'"
-        exist = self.fetchone(sql)
-        if exist != None:
-            return exist['item_id']
-        return None
-
-    # fetch id from Variations tbl for sku
-    def get_variation_id(self, sku):
-        sql = "SELECT id FROM Variations WHERE sku = '" + sku + "'"
-        exist = self.fetchone(sql)
-        if exist != None:
-            return exist['id']
-        return None
-
-    # insert a new item into Items table
-    # param: an Item object
-    def insert_item(self, item):
-        sql = "INSERT INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed) VALUES ('" \
-        + str(item.brand_id) + "', '" + item.serial + "', '" + item.url + "', '" + item.item_name  + "', '" + str(item.price)  + "', '" + str(item.original_price)  + "', '" \
-        + item.sale_info  + "', '" + item.description + "', '" + item.details + "', '" + item.season + "', 3)"
-        self.execute_insert(sql, 'item', item.serial)
-
-    # insert a new variation of an item into Variations table
-    # param: a Variationobject
-    def insert_variation(self, variation):
-        sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
-        + str(variation.item_id) + "','" + variation.sku + "','" + variation.url + "','" + variation.color_code + "','" + variation.size_name + "','" \
-        + variation.availability + "', " + str(variation.has_stock) + ", '" + str(variation.bm_col_name) + "', '" + str(variation.bm_col_family) + "', '" + variation.size_info + "')"
-        self.execute_insert(sql, 'variation', variation.sku)
-
-    # insert a new buyer_price for an item into Buyer_price table
-    # param: a buyer_price object
-    def insert_buyer_price(self, buyer_price):
-        sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + \
-        buyer_price.item_id + "','" + buyer_price.buyer + "','" + buyer_price.price + "','" + buyer_price.url + "')"
-        self.execute_insert(sql, 'buyer_price', buyer_price.url)
-
 def getItemInfo(url, brand_id):
     try:
         html = urlopen(url)
@@ -270,6 +157,7 @@ def process_item_data(brand_id, sku_short, url, title, price, original_price, sa
         item = create_item(brand_id, sku_short, url, title, price, original_price, sale_info, description, details, season)
         # save the Item object in db
         dbc.insert_item(item)
+        fetch_other_buyers(item)
     else:
         if exist_item['listed'] != 3:
             dbc.execute("UPDATE Items set listed = 4 WHERE serial='" + sku_short + "'")
@@ -282,23 +170,22 @@ def create_item(brand_id, serial, url, item_name, price, original_price, sale_in
     item = Item(brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, 3)
     return item
 
+# takes an Item object
+def get_item_id_for_item(item):
+    dbc = DBHelper()
+    return dbc.get_item_id(item.serial)
+
 def process_variation_data(serial, sku, url, color_code, size, availability, size_info, img_urls):
     dbc = DBHelper()
     if dbc.check_item_exists(serial):
         item_id = dbc.get_item_id(serial)
 
-        variation = create_variation(item_id, sku, url, color_code, size, availability, size_info)
+        variation = create_variation(item_id, sku, url, color_code, size, availability, size_info, img_urls)
         # insert Variationobj into Variations table
         dbc.insert_variation(variation)
-        fetch_other_buyers(str(item_id), serial)
-
-        if dbc.check_variation_exists(sku):
-            variation_id = dbc.get_variation_id(sku)
-            # save_imgs(img_urls, sku_short)
-            store_img_urls(str(item_id), str(variation_id), img_urls)
 
 # Create a new Variationobject. Return a Variationobject
-def create_variation(item_id, sku, url, color_code, size_name, availability, size_info):
+def create_variation(item_id, sku, url, color_code, size_name, availability, size_info, img_urls):
     # fetch color information from tbl Ck_colors
     bm_col_name = get_color_j(color_code)
     bm_col_family = get_color_family(color_code)
@@ -308,7 +195,7 @@ def create_variation(item_id, sku, url, color_code, size_name, availability, siz
         has_stock = 0
 
     # create a Variationobject
-    variation = Variation(item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info)
+    variation = Variation(item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info, img_urls)
 
     return variation
 
@@ -339,34 +226,28 @@ def get_color_family(color_code):
     return color_family
 
 # crawl Buyma and get info about the same product from other buyers
-def fetch_other_buyers(item_id, serial):
-    url = "https://www.buyma.com/r/-F1/" + serial
-    try:
-        html = urlopen(url)
-    except (HTTPError, URLError) as e:
-        print(e.code)
-        return None
-    try:
-        bsObj = BeautifulSoup(html, 'lxml')
+# receives an Item object
+def fetch_other_buyers(item):
+    item_id = get_item_id_for_item(item)
 
-        divs = bsObj.findAll('div', {'class': 'product_body'})
+    crawler = Crawler()
+    bsObj = crawler.getPage("https://www.buyma.com/r/-F1/" + item.serial)
+    divs = bsObj.findAll('div', {'class': 'product_body'})
 
-        # list holds multiple Buyer_price objects
-        b_prices = list()
-        for div in divs:
-            div_product_name = div.find('div', {'class': 'product_name'})
-            buyer_item = div_product_name.find('a')['href']
-            price = div_product_name.find('a')['price']
-            buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
+    # list holds multiple Buyer_price objects
+    b_prices = list()
+    for div in divs:
+        div_product_name = div.find('div', {'class': 'product_name'})
+        buyer_item = div_product_name.find('a')['href']
+        price = div_product_name.find('a')['price']
+        buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
 
-            #create a buyer_price object
-            b_prices.append(Buyer_price(item_id, buyer_name, price, buyer_item))
+        #create a buyer_price object
+        b_price = Buyer_price(item_id, buyer_name, price, buyer_item)
+        b_prices.append(b_price)
 
-        # process list of buyer_prices
-        store_buyer_prices(b_prices)
-
-    except AttributeError as e:
-        return None
+    # process list of buyer_prices
+    store_buyer_prices(b_prices)
 
 # takes a list of Buyer_price objects
 def store_buyer_prices(lst_b_prices):
@@ -390,17 +271,17 @@ def size_from_details(lst):
             size_info[key] = val
     return size_info
 
-def store_img_urls(item_id, variation_id, img_urls):
-    dbc = DBHelper()
-    for url in img_urls:
-        img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
-        sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
-        exist = dbc.fetchone(sql)
-        if exist is None:
-            sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
-            ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
-            dbc = DBHelper()
-            dbc.execute_insert(sql, 'img_urls', img_name)
+# def store_img_urls(item_id, variation_id, img_urls):
+#     dbc = DBHelper()
+#     for url in img_urls:
+#         img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
+#         sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
+#         exist = dbc.fetchone(sql)
+#         if exist is None:
+#             sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
+#             ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
+#             dbc = DBHelper()
+#             dbc.execute_insert(sql, 'img_urls', img_name)
 
 def get_items_from_list(lst, brand_id):
     for url in lst:
