@@ -15,7 +15,7 @@ from classes.myclasses import Item, Variation, Buyer_price
 
 # #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
-logging.basicConfig(filename='item_info.log', level=logging.DEBUG, format=log_format)
+logging.basicConfig(filename='log/item_info.log', level=logging.DEBUG, format=log_format)
 
 # Connect MySQL
 class DBHelper:
