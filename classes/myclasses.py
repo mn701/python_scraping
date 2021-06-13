@@ -2,6 +2,7 @@ import pymysql
 import logging
 from bs4 import BeautifulSoup
 import requests
+import re
 from .db_config_file import db_config
 
 # #logging
@@ -124,7 +125,7 @@ class DBHelper:
         else:
             sql += str(variation.lb_salable_qty) + ")"
 
-        if execute_insert(sql, 'variation', variation.sku):
+        if self.execute_insert(sql, 'variation', variation.sku):
             variation_id = self.get_variation_id(variation.sku)
             # save_imgs(img_urls, sku_short)
             self.store_img_urls(str(variation.item_id), str(variation_id), variation.img_urls)
@@ -190,7 +191,7 @@ class Variation:
         self.bm_col_name = bm_col_name
         self.bm_col_family = bm_col_family
         self.size_info = size_info
-        self.img_urls
+        self.img_urls = img_urls
         self.lb_prodouct = lb_prodouct
         self.lb_salable_qty = lb_salable_qty
 
