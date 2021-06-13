@@ -388,19 +388,6 @@ def get_pedro_urls(url):
 
     get_items_from_list(new_urls, PEDRO_ID)
 
-CK_ID = '1'
-def get_ck_urls(url):
-    html = urlopen(url)
-    logging.info("crawling %s: ", url)
-    bsObj = BeautifulSoup(html, 'lxml')
-    base = "https://www.charleskeith.com"
-    new_urls = list()
-    for div in bsObj.find_all(class_='active'):
-        a = div.find('a', {"class":"full-pdp-link"})
-        new_urls.append(base + a['href'])
-
-    get_items_from_list(new_urls, CK_ID)
-
 def get_pedro_urls(url):
     html = urlopen(url)
     logging.info("crawling %s: ", url)
