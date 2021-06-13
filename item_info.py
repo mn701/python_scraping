@@ -375,19 +375,6 @@ def get_items_from_list(lst, brand_id):
     for url in lst:
         getItemInfo(url, brand_id)
 
-PEDRO_ID = '2'
-def get_pedro_urls(url):
-    html = urlopen(url)
-    logging.info("crawling %s: ", url)
-    bsObj = BeautifulSoup(html, 'lxml')
-    base = "https://www.pedroshoes.com"
-    new_urls = list()
-    for div in bsObj.find_all(class_='active'):
-        a = div.find('a', {"class":"full-pdp-link"})
-        new_urls.append(base + a['href'])
-
-    get_items_from_list(new_urls, PEDRO_ID)
-
 def get_pedro_urls(url):
     html = urlopen(url)
     logging.info("crawling %s: ", url)
