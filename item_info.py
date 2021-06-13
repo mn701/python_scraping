@@ -122,6 +122,13 @@ class DBHelper:
         + variation.availability + "', " + str(variation.has_stock) + ", '" + str(variation.bm_col_name) + "', '" + str(variation.bm_col_family) + "', '" + variation.size_info + "')"
         self.execute_insert(sql, 'variation', variation.sku)
 
+    # insert a new buyer_price for an item into Buyer_price table
+    # param: a buyer_price object
+    def insert_buyer_price(self, buyer_price):
+        sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + \
+        buyer_price.item_id + "','" + buyer_price.buyer + "','" + buyer_price.price + "','" + buyer_price.url + "')"
+        self.execute_insert(sql, 'buyer_price', buyer_price.url)
+
 # Holds information about an Item  -> tbl Items
 class Item:
     def __init__(self, brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed):
@@ -150,6 +157,14 @@ class Variation:
         self.bm_col_name = bm_col_name
         self.bm_col_family = bm_col_family
         self.size_info = size_info
+
+# Holds information about listing from other buyers for an Item  -> tbl Buyer_price
+class Buyer_price:
+    def __init__(self, item_id, buyer, price, url):
+        self.item_id = item_id
+        self.buyer = buyer
+        self.price = price
+        self.url = url
 
 def getItemInfo(url, brand_id):
     try:
@@ -318,8 +333,7 @@ def process_variation_data(serial, sku, url, color_code, size, availability, siz
 
 # Storing item variation into Variations table
 def store_variation(item_id, sku, url, color_code, size_name, availability, size_info):
-    dbc = DBHelper()
-
+    # fetch color information from tbl Ck_colors
     bm_col_name = get_color_j(color_code)
     bm_col_family = get_color_family(color_code)
     # has_stock = 0 when the variation is unavailable
@@ -331,6 +345,7 @@ def store_variation(item_id, sku, url, color_code, size_name, availability, size
     variation = Variation(item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info)
 
     # insert variaion obj into Variations table
+    dbc = DBHelper()
     dbc.insert_variation(variation)
 
 # fetch color name in Japanese from table "ck_colors"
@@ -361,37 +376,45 @@ def get_color_family(color_code):
 
 # crawl Buyma and get info about the same product from other buyers
 def fetch_other_buyers(item_id, serial):
+    url = "https://www.buyma.com/r/-F1/" + serial
+    try:
+        html = urlopen(url)
+    except (HTTPError, URLError) as e:
+        print(e.code)
+        return None
+    try:
+        bsObj = BeautifulSoup(html, 'lxml')
+
+        divs = bsObj.findAll('div', {'class': 'product_body'})
+
+        # list holds multiple Buyer_price objects
+        b_prices = list()
+        for div in divs:
+            div_product_name = div.find('div', {'class': 'product_name'})
+            buyer_item = div_product_name.find('a')['href']
+            price = div_product_name.find('a')['price']
+            buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
+
+            #create a buyer_price object
+            b_price = Buyer_price(item_id, buyer_name, price, buyer_item)
+            b_prices.append(b_price)
+
+        # process list of buyer_prices
+        store_buyer_prices(b_prices)
+
+    except AttributeError as e:
+        return None
+
+# takes a list of Buyer_price objects
+def store_buyer_prices(lst_b_prices):
     dbc = DBHelper()
-    sql = "SELECT * FROM buyer_price WHERE item_id ='" + item_id + "'"
-    exist = dbc.fetchone(sql)
-    if exist is None:
-        url = "https://www.buyma.com/r/-F1/" + serial
-        try:
-            html = urlopen(url)
-        except (HTTPError, URLError) as e:
-            print(e.code)
-            return None
-        try:
-            bsObj = BeautifulSoup(html, 'lxml')
-
-            divs = bsObj.findAll('div', {'class': 'product_body'})
-            for div in divs:
-                div_product_name = div.find('div', {'class': 'product_name'})
-                buyer_item = div_product_name.find('a')['href']
-                buyer_price = div_product_name.find('a')['price']
-                buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
-
-                sql = "SELECT * FROM buyer_price WHERE url ='" + buyer_item + "'"
-                exist = dbc.fetchone(sql)
-                if exist is None:
-                    store_buyer_price(item_id, buyer_name, buyer_price, buyer_item)
-        except AttributeError as e:
-            return None
-
-def store_buyer_price(item_id, buyer, price, url):
-    sql =  "INSERT INTO buyer_price(item_id, buyer, price, url) VALUES ('" + item_id + "','" + buyer + "','" + price + "','" + url + "')"
-    dbc = DBHelper()
-    dbc.execute_insert(sql, 'buyer_price', url)
+    # b_price = Buyer_price object
+    for b_price in lst_b_prices:
+        sql = "SELECT * FROM buyer_price WHERE url ='" + b_price.url + "'"
+        exist = dbc.fetchone(sql)
+        if exist is None:
+            # insert a buyer_price obj into Buyer_price table
+            dbc.insert_buyer_price(b_price)
 
 def size_from_details(lst):
     size_info = {}
