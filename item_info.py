@@ -396,8 +396,7 @@ def fetch_other_buyers(item_id, serial):
             buyer_name = div.find('div', {'class':'product_Buyer'}).find('a').string
 
             #create a buyer_price object
-            b_price = Buyer_price(item_id, buyer_name, price, buyer_item)
-            b_prices.append(b_price)
+            b_prices.append(Buyer_price(item_id, buyer_name, price, buyer_item))
 
         # process list of buyer_prices
         store_buyer_prices(b_prices)
