@@ -109,16 +109,42 @@ class DBHelper:
     # insert a new variation of an item into Variations table
     # param: a Variaion object
     def insert_variation(self, variation):
-        sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
+        sql = "INSERT INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info, lb_prodouct, lb_salable_qty) VALUES ('" \
         + str(variation.item_id) + "','" + variation.sku + "','" + variation.url + "','" + variation.color_code + "','" + variation.size_name + "','" \
-        + variation.availability + "', " + str(variation.has_stock) + ", '" + str(variation.bm_col_name) + "', '" + str(variation.bm_col_family) + "', '" + variation.size_info + "')"
-        self.execute_insert(sql, 'variation', variation.sku)
+        + variation.availability + "', " + str(variation.has_stock) + ", '" + str(variation.bm_col_name) + "', '" + str(variation.bm_col_family) + "', '" \
+        + variation.size_info + "', "
+
+        if variation.lb_prodouct is None:
+            sql += "NULL, "
+        else:
+            sql += str(variation.lb_prodouct) + ", "
+
+        if variation.lb_salable_qty is None:
+            sql += "NULL)"
+        else:
+            sql += str(variation.lb_salable_qty) + ")"
+
+        if execute_insert(sql, 'variation', variation.sku):
+            variation_id = self.get_variation_id(variation.sku)
+            # save_imgs(img_urls, sku_short)
+            self.store_img_urls(str(variation.item_id), str(variation_id), variation.img_urls)
+
+    def store_img_urls(self, item_id, variation_id, img_urls):
+        for url in img_urls:
+            img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
+            sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
+            exist = self.fetchone(sql)
+            if exist is None:
+                sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
+                ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
+
+                self.execute_insert(sql, 'img_urls', img_name)
 
     # insert a new buyer_price for an item into Buyer_price table
     # param: a buyer_price object
     def insert_buyer_price(self, buyer_price):
         sql =  "INSERT INTO Buyer_price(item_id, buyer, price, url) VALUES ('" + \
-        buyer_price.item_id + "','" + buyer_price.buyer + "','" + buyer_price.price + "','" + buyer_price.url + "')"
+        str(buyer_price.item_id) + "','" + buyer_price.buyer + "','" + str(buyer_price.price) + "','" + buyer_price.url + "')"
         self.execute_insert(sql, 'buyer_price', buyer_price.url)
 
 class Crawler:
@@ -152,7 +178,8 @@ class Item:
 
 # Holds information about a Variaion of an Item  -> tbl Variations
 class Variation:
-    def __init__(self, item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info):
+    def __init__(self, item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info, \
+    img_urls, lb_prodouct=None, lb_salable_qty=None):
         self.item_id =  item_id
         self.sku = sku
         self.url = url
@@ -163,6 +190,9 @@ class Variation:
         self.bm_col_name = bm_col_name
         self.bm_col_family = bm_col_family
         self.size_info = size_info
+        self.img_urls
+        self.lb_prodouct = lb_prodouct
+        self.lb_salable_qty = lb_salable_qty
 
 # Holds information about listing from other buyers for an Item  -> tbl Buyer_price
 class Buyer_price:
