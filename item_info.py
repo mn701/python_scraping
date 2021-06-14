@@ -225,6 +225,33 @@ def get_color_family(color_code):
         color_family = row['bm_color_family']
     return color_family
 
+# fetch color name in Japanese from table "lb_colors"
+# receives ID, not color_code
+def get_lb_color_j(color_id):
+    dbc = DBHelper()
+    sql = "select color_j from Lb_colors where id = '" + color_id + "'"
+    color_j = ""
+    try:
+        row = dbc.fetchone(sql)
+        if row is None: color_j = ""
+        else: color_j = row['color_j']
+    except pymysql.err.IntegrityError:
+            logging.warning("check color of: %s", sku)
+    return color_j
+
+# fetch BM color family from table "lb_colors"
+def get_lb_color_family(color_id):
+    dbc = DBHelper()
+    sql = "select bm_color_family from Lb_colors where id = '" + color_id + "'"
+    row = dbc.fetchone(sql)
+    color_family = 0
+    if row is None:
+        color_family = 0
+        logging.warning("check color of: %s", sku)
+    else:
+        color_family = row['bm_color_family']
+    return color_family
+
 # crawl Buyma and get info about the same product from other buyers
 # receives an Item object
 def fetch_other_buyers(item):
