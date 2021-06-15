@@ -4,7 +4,7 @@ import shutil
 import logofolder
 import pymysql
 from urllib.request import urlretrieve
-import pwf
+from classes.utilities import *
 #
 SQUARE_SIZE = 1536
 SQUARE_HALF = 768
@@ -480,7 +480,7 @@ def add_corners(im):
 def get_images(brand):
     images = []
     for filename in os.listdir():
-        if (filename.endswith('.jpg') or filename.endswith('.jpg')) and filename.startswith('20'):
+        if (filename.endswith('.jpg') or filename.endswith('.jpeg')) and filename.startswith('20'):
             images.append(filename)
 
     if len(images) > 0:
