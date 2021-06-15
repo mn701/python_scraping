@@ -4,13 +4,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 import os
 import json
-import pwf
-
-pw = os.environ.get('mysql_password')
-pw = pwf.PW
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
-cur = conn.cursor(pymysql.cursors.DictCursor)
-cur.execute("USE shop")
+from classes.utilities import *
 
 AREA_CODE = 2002005
 COURIER = 677239
@@ -18,8 +12,9 @@ CK_SHOP = 'Charles&Keith直営店'
 PW_SHOP = 'Pedro直営店'
 
 def get_lst19(item_id):
-    cur.execute("SELECT id FROM variations where item_id = " + str(item_id) + " order by color_code")
-    rows = cur.fetchall()
+    dbc = DBHelper()
+    sql = ("SELECT id FROM variations where item_id = " + str(item_id) + " order by color_code")
+    rows = dbc.fetchall(sql)
 
     lst_urls = list()
     lst19 = list()
@@ -27,9 +22,9 @@ def get_lst19(item_id):
     for row in rows:
         variation_id = row['id']
         lst_var = list()
-        cur.execute("SELECT * FROM Images where variation_id = " + str(variation_id) + " order by img_name")
-        if(cur.rowcount > 0):
-            imgrows = cur.fetchall()
+        sql = "SELECT * FROM Images where variation_id = " + str(variation_id) + " order by img_name"
+        if(dbc.rowcount(sql) > 0):
+            imgrows = dbc.fetchall(sql)
             for img in imgrows:
                 if img['img_url'] != None:
                     lst_var.append(img['img_url'])
@@ -63,13 +58,13 @@ def get_lst19(item_id):
 
 # Create CSV for new colorsizes to upload
 def create_new_colorsizes():
+    dbc = DBHelper()
     sql = "SELECT Variations.*, Items.listed, Listed_items.category FROM Items, Variations, Listed_items \
     WHERE Items.item_id = Variations.item_id AND Listed_items.item_id = Variations.item_id AND \
     Items.listed = 3 AND availability NOT IN ('Unavailable') AND is_listed IS NULL"
-    cur.execute(sql)
-    rows = cur.fetchall()
+    rows = dbc.fetchall(sql)
 
-    with open('./new/colorsizes.csv', 'w', newline='') as file:
+    with open('csv/new/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', '幅', '高さ', 'マチ', '縦', '横', '厚み']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -94,12 +89,12 @@ def create_new_colorsizes():
 
 # Create CSV for new items
 def create_new_items():
+    dbc = DBHelper()
     sql = "SELECT Listed_items.*, Items.listed, Items.brand_id FROM Items, Listed_items \
     WHERE listed = 3 AND Items.item_id = Listed_items.item_id"
-    cur.execute(sql)
-    rows = cur.fetchall()
+    rows = dbc.fetchall(sql)
 
-    with open('./new/items.csv', 'w', newline='') as file:
+    with open('csv/new/items.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','商品管理番号','コントロール','商品名','ブランド','カテゴリ','シーズン','単価','買付可数量', \
         '購入期限','参考価格/通常出品価格', '商品コメント', '色サイズ補足', 'タグ', '配送方法', '買付エリア', '買付都市', '買付ショップ', \
         '発送エリア','発送都市','関税込み', '商品イメージ1','商品イメージ2','商品イメージ3','商品イメージ4','商品イメージ5', \
@@ -168,14 +163,14 @@ def create_new_items():
             writer.writerow(new_listing)
 
 def out_of_stock():
+    dbc = DBHelper()
     # fetch variations unavailable, yet listed on bm
     sql = "SELECT Variations.*, listed_items.buyma_id FROM Variations, listed_items \
     WHERE listed_items.item_id = Variations.item_id AND has_stock = 1 AND \
     availability NOT IN ( 'In Stock', 'Low in Stock' )"
-    cur.execute(sql)
-    rows = cur.fetchall()
+    rows = dbc.fetchall(sql)
 
-    with open('./outofstock/colorsizes.csv', 'w', newline='') as file:
+    with open('csv/outofstock/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -186,26 +181,26 @@ def out_of_stock():
 
     sql = "SELECT distinct Variations.item_id FROM Variations, listed_items \
     WHERE listed_items.item_id = Variations.item_id AND has_stock = 1 AND availability NOT IN ( 'In Stock', 'Low in Stock' )"
-    cur.execute(sql)
-    item_rows = cur.fetchall()
+
+    item_rows = dbc.fetchall(sql)
     items_to_retire = list()
     for item_row in item_rows:
         sql = "SELECT availability from Variations WHERE availability IN ( 'In Stock', 'Low in Stock' ) \
         and item_id = " + str(item_row['item_id'])
-        cur.execute(sql)
-        row = cur.fetchone()
+        row = dbc.fetchone(sql)
         if row is None:
             items_to_retire.append(str(item_row['item_id']))
 
-    items_to_be_retired(items_to_retire)
+    if len(items_to_retire) > 0:
+        items_to_be_retired(items_to_retire)
 
 def items_to_be_retired(items):
+    dbc = DBHelper()
     str = ", ".join(items)
     # fetch listed items to be unlisted
     sql = "SELECT * FROM listed_items WHERE item_id IN (" + str + ")"
-    cur.execute(sql)
-    rows = cur.fetchall()
-    with open('./outofstock/items.csv', 'w', newline='') as file:
+    rows = dbc.fetchall(sql)
+    with open('csv/outofstock/items.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -226,15 +221,15 @@ def items_to_be_retired(items):
 
 # fetch variations back to available, and not listed
 def back_stock():
+    dbc = DBHelper()
     sql = "SELECT Variations.*, listed_items.buyma_id FROM Variations, listed_items \
     WHERE listed_items.item_id = Variations.item_id AND has_stock = 0 AND is_listed IS NOT NULL \
     AND availability IN ( 'In Stock', 'Low in Stock' )"
-    cur.execute(sql)
-    rows = cur.fetchall()
+    rows = dbc.fetchall(sql)
 
     # items to be re-listed
     back_items_id = list()
-    with open('./backtostock/colorsizes.csv', 'w', newline='') as file:
+    with open('csv/backtostock/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','並び順','サイズ名称','検索用サイズ','色名称','色系統','在庫ステータス']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -244,26 +239,27 @@ def back_stock():
             writer.writerow({'商品ID': row['buyma_id'], '並び順': row['bm_order'], 'サイズ名称': row['size_name'],
             '検索用サイズ': row['bm_searchsize'], '色名称': row['bm_col_name'], '色系統': row['bm_col_family'], '在庫ステータス': 1})
 
-    # remove duplicates
-    back_items_id = list(dict.fromkeys(back_items_id))
-    strlst = ','.join(str(x) for x in back_items_id)
-    sql = "SELECT * FROM Items, Listed_items WHERE Items.listed IN (0, 2) AND Items.item_id = Listed_items.item_id \
-    AND Listed_items.item_id IN (" + strlst + ")"
-    # print(sql)
-    cur.execute(sql)
-    rows = cur.fetchall()
-    update_items(rows, 0)
+    if len(back_items_id) > 0:
+        # remove duplicates
+        back_items_id = list(dict.fromkeys(back_items_id))
+        strlst = ','.join(str(x) for x in back_items_id)
+        sql = "SELECT * FROM Items, Listed_items WHERE Items.listed IN (0, 2) AND Items.item_id = Listed_items.item_id \
+        AND Listed_items.item_id IN (" + strlst + ")"
+        # print(sql)
+        rows = dbc.fetchall(sql)
+        update_items(rows, 0)
 
 def items_to_be_updated():
+    dbc = DBHelper()
     # fetch items to be updated
     sql = "SELECT Listed_items.*, Items.listed FROM Items, Listed_items \
     WHERE listed = 4 AND Items.item_id = Listed_items.item_id"
-    cur.execute(sql)
-    rows = cur.fetchall()
+    rows = dbc.fetchall(sql)
     update_items(rows, 1)
 
 def update_items(rows, with_img):
-    with open('./update/items.csv', 'w', newline='') as file:
+    dbc = DBHelper()
+    with open('csv/update/items.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格']
         if with_img == 1:
             fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格', \
@@ -316,13 +312,13 @@ def update_items(rows, with_img):
 
 # Create CSV for new colorsizes to upload
 def colorsizes_update():
+    dbc = DBHelper()
     sql = "SELECT Variations.*, Items.listed, Listed_items.category FROM Items, Variations, Listed_items \
     WHERE Items.item_id = Variations.item_id AND Listed_items.item_id = Variations.item_id AND \
     Items.listed = 4 AND availability NOT IN ('Unavailable') AND is_listed IS NULL"
-    cur.execute(sql)
-    rows = cur.fetchall()
+    rows = dbc.fetchall(sql)
 
-    with open('./update/colorsizes.csv', 'w', newline='') as file:
+    with open('csv/update/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', '幅', '高さ', 'マチ', '縦', '横', '厚み']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
@@ -346,16 +342,15 @@ def colorsizes_update():
             writer.writerow(new_variation)
 
 def new_all_unavailable():
+    dbc = DBHelper()
     sql = "SELECT item_id FROM Items WHERE listed IN (3, 4)"
-    cur.execute(sql)
-    item_rows = cur.fetchall()
+    item_rows = dbc.fetchall(sql)
     items_cannot_list = list()
     print("Items cannot be listed:")
     for item_row in item_rows:
         sql = "SELECT availability from Variations WHERE availability IN ( 'In Stock', 'Low in Stock' ) \
         and item_id = " + str(item_row['item_id'])
-        cur.execute(sql)
-        row = cur.fetchone()
+        row = dbc.fetchone(sql)
         if row is None:
             print (item_row['item_id'])
             items_cannot_list.append(str(item_row['item_id']))

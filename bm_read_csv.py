@@ -1,19 +1,14 @@
 import pymysql
 import pandas as pd
 import os
-import pwf
+# from db_config_file import db_config
+from classes.utilities import *
 
-# connect to db
-pw = pwf.PW
-# pw = os.environ.get('mysql_password')
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
-# cur = conn.cursor()
-cur = conn.cursor(pymysql.cursors.DictCursor)
-cur.execute("USE shop")
-df = pd.read_csv('./downloaded/colorsizes.utf8.csv', dtype=str)
+dbc = DBHelper()
+df = pd.read_csv('csv/downloaded/colorsizes.utf8.csv', dtype=str)
 
-cur.execute("SELECT * FROM variations")
-rows = cur.fetchall()
+sql = "SELECT * FROM variations"
+rows = dbc.fetchall(sql)
 
 for row in rows:
     item_id_str = str(row['item_id'])
@@ -25,19 +20,17 @@ for row in rows:
         sql = "UPDATE variations SET has_stock = '" + new_stock + "', bm_order = '" + str(order) + \
         "' WHERE id = '" + str(row['id']) + "'"
 
-        cur.execute(sql)
+        dbc.execute(sql)
         if row['is_listed'] == None:
             bm_col_family = selected_variation['色系統'].values[0]
             sql = "UPDATE variations SET bm_col_family = '" + bm_col_family + "', is_listed = 1 WHERE id = '" + str(row['id']) + "'"
-            cur.execute(sql)
-        conn.commit()
+            dbc.execute(sql)
     except IndexError:
         pass
 
-df = pd.read_csv('./downloaded/items.utf8.csv', dtype=str)
+df = pd.read_csv('csv/downloaded/items.utf8.csv', dtype=str)
 
-cur.execute("SELECT * FROM Listed_items")
-rows = cur.fetchall()
+rows = dbc.fetchall("SELECT * FROM Listed_items")
 for row in rows:
     item_id_str = str(row['item_id'])
 
@@ -69,17 +62,13 @@ for row in rows:
                 + "tags = '" + str(tags) + "', "\
                 + "supplier = '" + supplier + "' "\
                 + " WHERE id = " + str(row['id'])
-            cur.execute(sql)
+            dbc.execute(sql)
 
         sql = "UPDATE Listed_items SET buyma_id = '" + bm_id + "', "\
             + "bm_control = '" + bm_control + "', "\
             + "season = '" + season + "', "\
             + "valid_till = '" + valid_till + "' "\
             + " WHERE id = " + str(row['id'])
-        cur.execute(sql)
-        conn.commit()
+        dbc.execute(sql)
     except IndexError:
         pass
-
-cur.close()
-conn.close()
