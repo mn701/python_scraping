@@ -256,10 +256,10 @@ def get_lb_color_family(color_id):
 # receives an Item object
 def fetch_other_buyers(item):
     item_id = get_item_id_for_item(item)
-
     crawler = Crawler()
     bsObj = crawler.getPage("https://www.buyma.com/r/-F1/" + item.serial)
-    divs = bsObj.findAll('div', {'class': 'product_body'})
+    resultList = bsObj.find(id="n_ResultList")
+    divs = resultList.findAll('div', {'class': 'product_body'})
 
     # list holds multiple Buyer_price objects
     b_prices = list()
