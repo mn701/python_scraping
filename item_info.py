@@ -12,6 +12,8 @@ import math
 import json
 # from db_config_file import db_config
 from classes.myclasses import *
+from classes.utilities import *
+
 
 # #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
@@ -297,18 +299,6 @@ def size_from_details(lst):
             val = re.findall(myregex, detail)[0][1]
             size_info[key] = val
     return size_info
-
-# def store_img_urls(item_id, variation_id, img_urls):
-#     dbc = DBHelper()
-#     for url in img_urls:
-#         img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
-#         sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
-#         exist = dbc.fetchone(sql)
-#         if exist is None:
-#             sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
-#             ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
-#             dbc = DBHelper()
-#             dbc.execute_insert(sql, 'img_urls', img_name)
 
 def get_items_from_list(lst, brand_id):
     for url in lst:
