@@ -188,7 +188,7 @@ def process_variation_data(serial, sku, url, color_code, size, availability, siz
         # insert Variationobj into Variations table
         dbc.insert_variation(variation)
 
-# Create a new Variationobject. Return a Variationobject
+# Create a new Variationobject. Return a Variation object
 def create_variation(item_id, sku, url, color_code, size_name, availability, size_info, img_urls):
     # fetch color information from tbl Ck_colors
     bm_col_name = get_color_j(color_code)
@@ -199,8 +199,8 @@ def create_variation(item_id, sku, url, color_code, size_name, availability, siz
         has_stock = 0
 
     # create a Variationobject
-    variation = Variation(item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info, img_urls)
-
+    variation = Variation(item_id, sku, url, color_code, size_name, has_stock, availability, \
+    1, bm_col_name, bm_col_family, size_info, img_urls)
     return variation
 
 # fetch color name in Japanese from table "ck_colors"
