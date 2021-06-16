@@ -3,8 +3,7 @@ import logging
 from bs4 import BeautifulSoup
 import requests
 import re
-# from .db_config_file import db_config
-from .db_dup_file import db_config
+from .db_config_file import db_config
 
 # #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'

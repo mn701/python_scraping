@@ -13,6 +13,7 @@ import json
 # from db_config_file import db_config
 from classes.myclasses import *
 from classes.utilities import *
+import img_config
 
 
 # #logging
@@ -127,11 +128,12 @@ def check_variation_exists(sku, url):
     return dbc.rowcount(sql) > 0
 
 # download images in the folder
-def save_imgs(imglocations, folderName):
-    currPath = os.path.dirname(os.path.realpath(__file__))
-    reqPath = os.path.join(currPath,folderName)
+def save_imgs(brand_id, imglocations, folderName):
+    # currPath = os.path.dirname(os.path.realpath(__file__))
+    brandPath = img_config.img_folder[brand_id]
+    reqPath = os.path.join(brandPath,folderName)
     if os.path.isdir(reqPath) == False:
-        os.mkdir(folderName)
+        os.mkdir(reqPath)
 
     for imglocation in imglocations:
         imgname = re.findall("[\d, \w,-]+\.jpg", imglocation)[0]
