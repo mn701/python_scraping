@@ -15,25 +15,27 @@ class Item:
 
 # Holds information about a Variaion of an Item  -> tbl Variations
 class Variation:
-    def __init__(self, item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info, \
-    img_urls):
+    def __init__(self, item_id, sku, url, color_code, size_name, has_stock, availability, \
+    bm_order, bm_col_name, bm_col_family, size_info, img_urls):
         self.item_id =  item_id
         self.sku = sku
         self.url = url
         self.color_code = color_code
         self.size_name = size_name
-        self.availability = availability
         self.has_stock = has_stock
+        self.availability = availability
+        self.bm_order = bm_order
         self.bm_col_name = bm_col_name
         self.bm_col_family = bm_col_family
         self.size_info = size_info
         self.img_urls = img_urls
 
 class Lb_Variation(Variation):
-    def __init__(self, item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info, \
-    img_urls, lb_product, lb_salable_qty):
-        super().__init__(item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info, \
-        img_urls)
+    def __init__(self, item_id, sku, url, color_code, size_name, has_stock, availability, \
+    bm_order, bm_col_name, bm_col_family, size_info, img_urls, \
+    lb_product, lb_salable_qty):
+        super().__init__(item_id, sku, url, color_code, size_name, has_stock, availability, \
+        bm_order, bm_col_name, bm_col_family, size_info, img_urls)
         self.lb_product = lb_product
         self.lb_salable_qty = lb_salable_qty
 
