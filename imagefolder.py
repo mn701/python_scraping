@@ -1,9 +1,9 @@
 from PIL import Image, ImageDraw
 import os
 import shutil
-import logofolder
 import pymysql
 from urllib.request import urlretrieve
+import img_config
 from classes.utilities import *
 #
 SQUARE_SIZE = 1536
@@ -47,10 +47,8 @@ def create_im_1(image, brand, crop_size=0):
 
     # Add logo at top
     new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE))
-    if brand == 1:
-        new_im = add_cklogo_top(resized)
-    elif brand == 2:
-        new_im = add_logo_top(resized)
+
+    new_im = add_logo_top(resized, brand)
 
     # Add shop logo
     im_with_logo = add_shop_logo(new_im)
@@ -171,10 +169,7 @@ def create_im_2_ver(images, brand, crop_x_size=100):
         new_im.paste(im, coords[resized_images.index(im)])
 
     # Add logo at top
-    if brand == 1:
-        new_im = add_cklogo_top(new_im)
-    elif brand == 2:
-        new_im = add_logo_top(new_im)
+    new_im = add_logo_top(new_im, brand)
 
     # Add shop logo
     im_with_logo = add_shop_logo(new_im)
@@ -202,10 +197,7 @@ def create_im_3_ver(images, brand, crop_x_size=100):
         new_im.paste(im, coords[resized_images.index(im)])
 
     # Add logo at top
-    if brand == 1:
-        new_im = add_cklogo_top(new_im)
-    elif brand == 2:
-        new_im = add_logo_top(new_im)
+    new_im = add_logo_top(new_im, brand)
 
     # Add shop logo
     im_with_logo = add_shop_logo(new_im)
@@ -382,7 +374,7 @@ def crop_bottom_square(im, crop_size):
 
 def add_shop_logo(image):
     # Adding logo image
-    logo_im = Image.open(logofolder.LOGO_SHOP)
+    logo_im = Image.open(img_config.LOGO_SHOP)
     logo_im = logo_im.resize((267, 267))
     logoWidth, logoHeight = logo_im.size
     width, height = image.size
@@ -392,26 +384,62 @@ def add_shop_logo(image):
 
     return image
 
-def add_logo_top(image):
+def add_logo_top(image, brand):
     # Adding logo image
-    logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
-    logo_im = logo_im.resize((600, 112))
-    logoWidth, logoHeight = logo_im.size
-    width, height = image.size
+    if brand == 1:
+        # Adding logo image
+        logo_im = Image.open(img_config.CK_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((400, 400))
+        logoWidth, logoHeight = logo_im.size
+        width, height = image.size
 
-    # Paste logo on botom left
-    image.paste(logo_im, (468, 20), logo_im)
+        # Paste logo on botom left
+        image.paste(logo_im, (568, 0), logo_im)
+
+        return image
+    elif brand == 2:
+        logo_im = Image.open(img_config.PEDRO_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((600, 112))
+        logoWidth, logoHeight = logo_im.size
+        width, height = image.size
+
+        # Paste logo on botom left
+        image.paste(logo_im, (468, 20), logo_im)
+
+    elif brand == 3:
+        logo_im = Image.open(img_config.LB_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((400, 400))
+        logoWidth, logoHeight = logo_im.size
+        width, height = image.size
+
+        # Paste logo on botom left
+        image.paste(logo_im, (568, 0), logo_im)
 
     return image
 
+# def add_cklogo_top(image):
+#     # Adding logo image
+#     logo_im = Image.open(img_config.CK_LOGO).convert("RGBA")
+#     logo_im = logo_im.resize((400, 400))
+#     logoWidth, logoHeight = logo_im.size
+#     width, height = image.size
+#
+#     # Paste logo on botom left
+#     image.paste(logo_im, (568, 0), logo_im)
+#
+#     return image
+
 def add_logo_center(image, brand):
     # Adding logo image
-    if brand == 2:
-        logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
-        logo_im = logo_im.resize((600, 112))
-    else:
-        logo_im = Image.open(logofolder.CK_THIN_LOGO).convert("RGBA")
+    if brand == 1:
+        logo_im = Image.open(img_config.CK_THIN_LOGO).convert("RGBA")
         logo_im = logo_im.resize((1490, 100))
+    elif brand == 2:
+        logo_im = Image.open(img_config.PEDRO_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((600, 112))
+    elif brand == 3:
+        logo_im = Image.open(img_config.LB_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((400, 400))
 
     logoWidth, logoHeight = logo_im.size
     width, height = image.size
@@ -424,42 +452,40 @@ def add_logo_center(image, brand):
 def add_logo_left(image, brand):
     # Adding logo image
     if brand == 1:
-        logo_im = Image.open(logofolder.CK_LOGO).convert("RGBA")
+        logo_im = Image.open(img_config.CK_LOGO).convert("RGBA")
         logo_im = logo_im.resize((400, 400))
         # Paste logo on botom left
         image.paste(logo_im, (0, 568), logo_im)
-    else:
-        logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
+    elif brand == 2:
+        logo_im = Image.open(img_config.PEDRO_LOGO).convert("RGBA")
         logo_im = logo_im.resize((600, 112))
         # Paste logo on botom left
         image.paste(logo_im, (15, 712), logo_im)
+    elif brand == 3:
+        logo_im = Image.open(img_config.LB_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((400, 400))
+        # Paste logo on botom left
+        image.paste(logo_im, (0, 568), logo_im)
 
     return image
 
 def add_logo_topleft(image, brand):
     # Adding logo image
     if brand == 1:
-        logo_im = Image.open(logofolder.CK_LOGO).convert("RGBA")
+        logo_im = Image.open(img_config.CK_LOGO).convert("RGBA")
         logo_im = logo_im.resize((300, 300))
         # Paste logo on botom left
         image.paste(logo_im, (0, 20), logo_im)
-    else:
-        logo_im = Image.open(logofolder.PEDRO_LOGO).convert("RGBA")
+    elif brand == 2:
+        logo_im = Image.open(img_config.PEDRO_LOGO).convert("RGBA")
         logo_im = logo_im.resize((600, 112))
         # Paste logo on botom left
         image.paste(logo_im, (15, 20), logo_im)
-
-    return image
-
-def add_cklogo_top(image):
-    # Adding logo image
-    logo_im = Image.open(logofolder.CK_LOGO).convert("RGBA")
-    logo_im = logo_im.resize((400, 400))
-    logoWidth, logoHeight = logo_im.size
-    width, height = image.size
-
-    # Paste logo on botom left
-    image.paste(logo_im, (568, 0), logo_im)
+    elif brand == 3:
+        logo_im = Image.open(img_config.LB_LOGO).convert("RGBA")
+        logo_im = logo_im.resize((300, 300))
+        # Paste logo on botom left
+        image.paste(logo_im, (0, 20), logo_im)
 
     return image
 
@@ -480,7 +506,7 @@ def add_corners(im):
 def get_images(brand):
     images = []
     for filename in os.listdir():
-        if (filename.endswith('.jpg') or filename.endswith('.jpeg')) and filename.startswith('20'):
+        if (filename.endswith('.jpg') or filename.endswith('.jpeg')):
             images.append(filename)
 
     if len(images) > 0:
