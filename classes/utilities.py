@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 from .db_config_file import db_config
+# from .db_dup_file import db_config
 
 # #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
@@ -110,9 +111,9 @@ class DBHelper:
     # insert a new variation of an item into Variations table
     # param: a Variaion object
     def insert_variation(self, variation):
-        sql = "INSERT IGNORE INTO Variations (item_id, sku, url, color_code, size_name, availability, has_stock, bm_col_name, bm_col_family, size_info) VALUES ('" \
+        sql = "INSERT IGNORE INTO Variations (item_id, sku, url, color_code, size_name, has_stock, availability, bm_order, bm_col_name, bm_col_family, size_info) VALUES ('" \
         + str(variation.item_id) + "','" + variation.sku + "','" + variation.url + "','" + variation.color_code + "','" + variation.size_name + "','" \
-        + variation.availability + "', " + str(variation.has_stock) + ", '" + str(variation.bm_col_name) + "', '" + str(variation.bm_col_family) + "', '" \
+        + str(variation.has_stock) + "', '" + variation.availability + "', '" + str(variation.bm_order) + "', '" + str(variation.bm_col_name) + "', '" + str(variation.bm_col_family) + "', '" \
         + variation.size_info + "')"
 
         if self.execute_insert(sql, 'variation', variation.sku):
