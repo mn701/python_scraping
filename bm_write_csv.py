@@ -354,6 +354,9 @@ def new_all_unavailable():
         if row is None:
             print (item_row['item_id'])
             items_cannot_list.append(str(item_row['item_id']))
+    if len(items_cannot_list) > 0:
+        items_to_be_retired(items_cannot_list)
+
 
 
 def create_new():
