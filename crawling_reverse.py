@@ -4,59 +4,51 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import os
 import logging
+from classes.utilities import *
 
 #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
 logging.basicConfig(filename='crawling_rev.log', level=logging.DEBUG, format=log_format)
 
-pw = os.environ.get('mysql_password')
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=pw, db='mysql')
-
-cur = conn.cursor()
-cur.execute("USE shop")
-cur.execute("SELECT id, item_id, url FROM variations where has_stock = 0 and availability != 'unavailable'")
-rows = cur.fetchall()
-print(cur.rowcount)
+crawler = Crawler()
+dbc = DBHelper()
+sql = "SELECT id, item_id, url FROM variations where has_stock = 0 and availability != 'unavailable'"
+rows = dbc.fetchall(sql)
+print(dbc.rowcount(sql))
 for row in rows:
-    res = requests.get(row[2])
-    try:
-        res.raise_for_status()
-    except Exception as e:
-        logging.warning("There was a problem: %s %s", e, row[2])
+    bsObj = crawler.getPage(row['url'])
+    txt_availability = ''
+    size_new = ''
+    unavailable = crawler.safeGet(bsObj, 'div.product_retirement-unavailable_text')
+    if unavailable:
+        txt_availability = 'Unavailable'
+        # logging.warning("Unavailable: %s", row[2])
     else:
-        html = urlopen(row[2])
-        bsObj = BeautifulSoup(html, 'lxml')
-        txt_availability = ''
-        size_new = ''
-        unavailable = bsObj.find("div", {"class":"product_retirement-unavailable_text"})
-        if unavailable:
-            txt_availability = 'Unavailable'
-            # logging.warning("Unavailable: %s", row[2])
+        span_availability = bsObj.find("span", {"class":"pdp-availability_badge"})
+        if span_availability:
+            txt_availability = crawler.safeGet(bsObj, 'span.pdp-availability_badge')
+            if txt_availability == '':
+                txt_availability = 'OUT OF STOCK'
+                # logging.warning("Check stock: %s", row[2])
+            elif txt_availability == 'In Stock' or txt_availability == 'Low in Stock':
+                logging.warning("Item: %s, variation: %s is back. %s", row['item_id'], row['id'], row['url'])
         else:
-            availability = bsObj.find("span", {"class":"pdp-availability_badge"})
-            if availability:
-                txt_availability = availability.get_text().strip()
-                if txt_availability == '':
-                    txt_availability = 'OUT OF STOCK'
-                    # logging.warning("Check stock: %s", row[2])
-                elif txt_availability == 'In Stock' or txt_availability == 'Low in Stock':
-                    logging.warning("Item: %s, variation: %s is back. %s", row[0], row[1], row[2])
-            else:
-                txt_availability = 'No Content'
-                # logging.warning("No availability info: %s", row[2])
-            size = bsObj.find("div", {"class":{"selected-size"}}).get_text().strip()
-            if size == "Select Size":
-                availability = 'OUT OF STOCK'
-            else:
-                size_new = size
-                # logging.warning("Check stock: %s at %s", row[0], row[2])
-        id = str(row[0])
-        sql = "UPDATE variations SET availability = '" + txt_availability + "' WHERE id = '" + id + "'"
-        cur.execute(sql)
-        if len(size_new) > 0:
-            sql = "UPDATE variations SET size_name = '" + size_new + "' WHERE id = '" + id + "'"
-            cur.execute(sql)
-        conn.commit()
+            txt_availability = 'No Content'
+            # logging.warning("No availability info: %s", row[2])
 
-cur.close()
-conn.close()
+        size = crawler.safeGet(bsObj, 'div.selected-size')
+        size = re.sub(r' - Unavailable', '', size)
+        if size == "Select Size":
+            availability = 'OUT OF STOCK'
+            size_span = bsObj.find("span", {"class":"size-value"})
+            if size_span:
+                size = crawler.safeGet(bsObj, 'span.size-value')
+        else:
+            size_new = size
+            # logging.warning("Check stock: %s at %s", row[0], row[2])
+    id = str(row['id'])
+    sql = "UPDATE variations SET availability = '" + txt_availability + "' WHERE id = '" + id + "'"
+    dbc.execute(sql)
+    if len(size_new) > 0:
+        sql = "UPDATE variations SET size_name = '" + size_new + "' WHERE id = '" + id + "'"
+        dbc.execute(sql)
