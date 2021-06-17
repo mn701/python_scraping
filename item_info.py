@@ -184,7 +184,7 @@ def get_color_family(color_code):
     color_family = 0
     if row is None:
         color_family = 0
-        logging.warning("check color of: %s", sku)
+        logging.warning("check color of: %s", color_code)
     else:
         color_family = row['bm_color_family']
     return color_family
