@@ -34,7 +34,8 @@ def getItemInfo(url, brand_id):
         return None
 
     # check if sku already exists in Variations table
-    if check_variation_exists(sku, url):
+    dbc = DBHelper()
+    if dbc.check_variation_exists_url(sku, url):
         logging.info('%s already exists', sku)
         return None
 
@@ -98,7 +99,12 @@ def getItemInfo(url, brand_id):
     firstimg = arr_img[0]
     imgname = get_imgname(firstimg)
     season = imgname[0:7]
-    color_code =  re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
+
+    color_code = ''
+    if (len(re.findall("([\d|\w]+)-\d\.jpg", imgname)) > 0):
+        color_code = re.findall("([\d|\w]+)-\d\.jpg", imgname)[0]
+    else:
+        logging.info('Check img name: %s at %s', firstimg, url)
 
     img_urls = []
     for img in arr_img:

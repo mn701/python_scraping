@@ -14,12 +14,6 @@ def get_item_id_for_item(item):
     dbc = DBHelper()
     return dbc.get_item_id(item.serial)
 
-# query Variations table for sku
-def check_variation_exists(sku, url):
-    dbc = DBHelper()
-    sql = "SELECT * FROM Variations WHERE sku = '" + sku + "' OR url='" + url + "'"
-    return dbc.rowcount(sql) > 0
-
 # crawl Buyma and get info about the same product from other buyers
 # receives an Item object
 def fetch_other_buyers(item):

@@ -4,7 +4,6 @@ from bs4 import BeautifulSoup
 import requests
 import re
 from .db_config_file import db_config
-# from .db_dup_file import db_config
 
 # #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
@@ -82,6 +81,11 @@ class DBHelper:
     # query Variations table for sku
     def check_variation_exists(self, sku):
         sql = "SELECT * FROM Variations WHERE sku = '" + sku + "'"
+        return self.rowcount(sql) > 0
+
+    # query Variations table for sku and url
+    def check_variation_exists_url(self, sku, url):
+        sql = "SELECT * FROM Variations WHERE sku = '" + sku + "' OR url='" + url + "'"
         return self.rowcount(sql) > 0
 
     # fetch item_id of serial from Items tbl
