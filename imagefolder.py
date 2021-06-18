@@ -116,6 +116,37 @@ def create_im_from_4_white(images, brand, crop_size=0):
 
     return im_with_logo
 
+def create_im_from_4_cropmanual(images, brand, left, top, crop_side):
+    MARGIN = 20
+    LOGO_HEIGHT_HALF = int(116/2)
+    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE), (255, 255, 255))
+    # Create a list for quaretersized images.
+    quarter_images = []
+    side = SQUARE_HALF - MARGIN * 2 - LOGO_HEIGHT_HALF
+    for imgfile in images:
+        copy_im = Image.open(imgfile).copy()
+        cropped_im = crop_square_manual(copy_im, left, top, crop_side)
+        quartersized_im = cropped_im.resize((side, side))
+        quartersized_im = add_corners(quartersized_im)
+        quarter_images.append(quartersized_im)
+
+    # Create a list of coordinates.
+    coords = []
+    for left in [int(SQUARE_HALF / 2 - side / 2), SQUARE_HALF + int(SQUARE_HALF / 2 - side / 2)]:
+        for top in [0 + MARGIN, SQUARE_HALF + MARGIN + LOGO_HEIGHT_HALF]:
+            coords.append((left, top))
+
+    # Paste each quartersized image to new_im
+    for quarter_im in quarter_images:
+        new_im.paste(quarter_im, coords[quarter_images.index(quarter_im)], quarter_im)
+
+    # Add logo at center
+    new_im = add_logo_center(new_im, brand)
+
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
 def create_im_3_sq(images, brand, crop_size=0):
     MARGIN = 20
     new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE), (255, 255, 255))
@@ -371,6 +402,13 @@ def crop_bottom_square(im, crop_size):
     crop_rectangle = (crop_size, crop_size, int(sq_x - crop_size), int(sq_y - crop_size))
     cropped_im = square_im.crop(crop_rectangle)
     return cropped_im
+
+def crop_square_manual(im, left, top, side):
+    x, y = im.size
+    crop_square = (left, top, side + left, side + top)
+    square_im = im.crop(crop_square)
+
+    return square_im
 
 def add_shop_logo(image):
     # Adding logo image
