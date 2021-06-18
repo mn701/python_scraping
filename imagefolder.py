@@ -235,6 +235,38 @@ def create_im_3_ver(images, brand, crop_x_size=100):
 
     return im_with_logo
 
+def create_im_3_ver_sm_logo(images, brand, crop_x_size=100):
+    new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE), (221, 221, 219))
+    new_width = int(SQUARE_SIZE / 3)
+    # Create a new folder to save resized images.
+    os.makedirs('vresized', exist_ok=True)
+
+    # Create a list for 3 vertical images.
+    resized_images = get_resized_images_v(images, crop_x_size, new_width)
+    new_height = resized_images[0].size[1]
+
+    # Create a list of coordinates.
+    coords = []
+    for left in [0, new_width, int(new_width * 2)]:
+        top = 200
+        coords.append((left, top))
+
+    # Paste each quartersized image to new_im
+    for im in resized_images:
+        new_im.paste(im, coords[resized_images.index(im)])
+
+    # Add brand logo smaller
+    logo_im = Image.open('/Users/MN1/shopcode/love-bonito-logo.png').convert("RGBA")
+    logo_im = logo_im.resize((400, 200))
+
+    # Paste logo on botom left
+    new_im.paste(logo_im, (SQUARE_HALF - 180, 0), logo_im)
+
+    # Add shop logo
+    im_with_logo = add_shop_logo(new_im)
+
+    return im_with_logo
+
 def create_im_2_hor(images, brand, crop_y_size):
     MARGIN = 50
     new_im = Image.new('RGBA', (SQUARE_SIZE, SQUARE_SIZE), (255, 255, 255))
