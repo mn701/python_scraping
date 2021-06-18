@@ -4,52 +4,50 @@ from urllib.request import urlopen
 from bs4 import BeautifulSoup
 import os
 import logging
+from classes.utilities import *
 
-#logging
+
+crawler = Crawler()
+dbc = DBHelper()
+
+logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
-logging.basicConfig(filename='crawling.log', level=logging.DEBUG, format=log_format)
+logging.basicConfig(filename='log/crawling.log', level=logging.DEBUG, format=log_format)
 
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock',user='root', passwd=os.environ['mysql_password'], db='mysql')
-
-cur = conn.cursor()
-cur.execute("USE shop")
-cur.execute("SELECT id, url FROM variations where has_stock = 1")
-rows = cur.fetchall()
-print(cur.rowcount)
+sql = "SELECT id, url FROM variations where has_stock = 1"
+rows = dbc.fetchall(sql)
+print(dbc.rowcount(sql))
 for row in rows:
-    res = requests.get(row[1])
-    try:
-        res.raise_for_status()
-    except Exception as e:
-        logging.warning("There was a problem: %s %s", e, row[1])
+    bsObj = crawler.getPage(row['url'])
+
+    if bsObj is None:
+        print("bsObj is None", row['url'])
+
+    txt_availability = ''
+    unavailable = crawler.safeGet(bsObj, 'div.product_retirement-unavailable_text')
+    if unavailable:
+        txt_availability = 'Unavailable'
+        logging.warning("Unavailable: %s", row['url'])
     else:
-        html = urlopen(row[1])
-        bsObj = BeautifulSoup(html, 'lxml')
-        txt_availability = ''
-        unavailable = bsObj.find("div", {"class":"product_retirement-unavailable_text"})
-        if unavailable:
-            txt_availability = 'Unavailable'
-            logging.warning("Unavailable: %s", row[1])
+        span_availability = bsObj.find("span", {"class":"pdp-availability_badge"})
+        if span_availability:
+            txt_availability = crawler.safeGet(bsObj, 'span.pdp-availability_badge')
+            if txt_availability == '':
+                txt_availability = 'OUT OF STOCK'
+                logging.warning("Check stock: %s", row['url'])
         else:
-            availability = bsObj.find("span", {"class":"pdp-availability_badge"})
-            if availability:
-                txt_availability = availability.get_text().strip()
-                if txt_availability == '':
-                    txt_availability = 'OUT OF STOCK'
-                    logging.warning("Check stock: %s", row[1])
-            else:
-                txt_availability = 'No Content'
-                logging.warning("No availability info: %s", row[1])
-            size = bsObj.find("div", {"class":{"selected-size"}}).get_text().strip()
-            if size == "Select Size":
-                availability = 'OUT OF STOCK'
-                logging.warning("Check stock: %s at %s", row[0], row[1])
-                size = bsObj.find("span", {"class":{"size-value"}}).get_text().strip()
-        id = str(row[0])
+            txt_availability = 'No Content'
+            logging.warning("No availability info: %s", row['url'])
+
+        size = crawler.safeGet(bsObj, 'div.selected-size')
+        if re.match(r' - Unavailable', size) or size == "Select Size":
+            txt_availability = 'OUT OF STOCK'
+            logging.warning("Check stock: %s at %s", row['id'], row['url'])
+            size = re.sub(r' - Unavailable', '', size)
+            size_span = bsObj.find("span", {"class":"size-value"})
+            if size_span:
+                size = crawler.safeGet(bsObj, 'span.size-value')
+
+        id = str(row['id'])
         sql = "UPDATE variations SET availability = '" + txt_availability + "' WHERE id = '" + id + "'"
-
-        cur.execute(sql)
-        conn.commit()
-
-cur.close()
-conn.close()
+        dbc.execute(sql)

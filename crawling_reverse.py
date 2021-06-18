@@ -8,7 +8,7 @@ from classes.utilities import *
 
 #logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
-logging.basicConfig(filename='crawling_rev.log', level=logging.DEBUG, format=log_format)
+logging.basicConfig(filename='log/crawling_rev.log', level=logging.DEBUG, format=log_format)
 
 crawler = Crawler()
 dbc = DBHelper()
@@ -37,9 +37,9 @@ for row in rows:
             # logging.warning("No availability info: %s", row[2])
 
         size = crawler.safeGet(bsObj, 'div.selected-size')
-        size = re.sub(r' - Unavailable', '', size)
-        if size == "Select Size":
-            availability = 'OUT OF STOCK'
+        if re.match(r' - Unavailable', size) or size == "Select Size":
+            txt_availability = 'OUT OF STOCK'
+            size = re.sub(r' - Unavailable', '', size)
             size_span = bsObj.find("span", {"class":"size-value"})
             if size_span:
                 size = crawler.safeGet(bsObj, 'span.size-value')
