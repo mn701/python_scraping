@@ -20,9 +20,6 @@ print(dbc.rowcount(sql))
 for row in rows:
     bsObj = crawler.getPage(row['url'])
 
-    if bsObj is None:
-        print("bsObj is None", row['url'])
-
     txt_availability = ''
     unavailable = crawler.safeGet(bsObj, 'div.product_retirement-unavailable_text')
     if unavailable:
