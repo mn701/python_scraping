@@ -19,9 +19,6 @@ print(dbc.rowcount(sql))
 for row in rows:
     bsObj = crawler.getPage(row['url'])
 
-    availability = 'OUT OF STOCK'
-    has_stock = 0
-
     script_string = ''
     magento_scripts = bsObj.find_all("script", {"type":{"text/x-magento-init"}})
     for script in magento_scripts:
@@ -35,6 +32,9 @@ for row in rows:
 
     # key in index is each prod
     for key in index:
+        availability = 'OUT OF STOCK'
+        has_stock = 0
+
         prod_id = key
         salable_qty = index[key]['lb_salable_qty']
 
