@@ -3,6 +3,7 @@ import logging
 from bs4 import BeautifulSoup
 import requests
 import re
+import sys
 from .db_config_file import db_config
 
 # #logging
@@ -128,8 +129,8 @@ class DBHelper:
     def store_img_urls(self, item_id, variation_id, img_urls):
         for url in img_urls:
             try:
-                img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
-            except indexError as error:
+                img_name = re.findall("[\d, \w,-]+\.jpe?g", url)[0]
+            except IndexError:
                 logging.error("Check img name: " + url)
             if img_name:
                 sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
