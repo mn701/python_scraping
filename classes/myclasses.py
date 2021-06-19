@@ -12,6 +12,9 @@ class Item:
         self.details = details
         self.season = season
         self.listed = listed
+        self.postage = 30
+        if brand_id == 3:
+            self.postage = 25
 
 # Holds information about a Variaion of an Item  -> tbl Variations
 class Variation:
