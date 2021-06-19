@@ -107,9 +107,9 @@ class DBHelper:
     # insert a new item into Items table
     # param: an Item object
     def insert_item(self, item):
-        sql = "INSERT IGNORE INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, listed) VALUES ('" \
+        sql = "INSERT IGNORE INTO Items (brand_id, serial, url, item_name, price, original_price, sale_info, description, details, season, postage, listed) VALUES ('" \
         + str(item.brand_id) + "', '" + item.serial + "', '" + item.url + "', '" + item.item_name  + "', '" + str(item.price)  + "', '" + str(item.original_price)  + "', '" \
-        + item.sale_info  + "', '" + item.description + "', '" + item.details + "', '" + item.season + "', 3)"
+        + item.sale_info  + "', '" + item.description + "', '" + item.details + "', '" + item.season + "', '" + str(item.postage) + "', 3)"
         self.execute_insert(sql, 'item', item.serial)
 
     # insert a new variation of an item into Variations table
