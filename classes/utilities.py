@@ -127,14 +127,18 @@ class DBHelper:
 
     def store_img_urls(self, item_id, variation_id, img_urls):
         for url in img_urls:
-            img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
-            sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
-            exist = self.fetchone(sql)
-            if exist is None:
-                sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
-                ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
+            try:
+                img_name = re.findall("[\d, \w,-]+\.jpg", url)[0]
+            except indexError as error:
+                logging.error("Check img name: " + url)
+            if img_name:
+                sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
+                exist = self.fetchone(sql)
+                if exist is None:
+                    sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \
+                    ('" + item_id + "','" + variation_id + "','" + img_name + "','" + url + "')"
 
-                self.execute_insert(sql, 'img_urls', img_name)
+                    self.execute_insert(sql, 'img_urls', img_name)
 
     # insert a new buyer_price for an item into Buyer_price table
     # param: a buyer_price object
