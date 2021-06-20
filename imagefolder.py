@@ -256,7 +256,7 @@ def create_im_3_ver_sm_logo(images, brand, crop_x_size=100):
         new_im.paste(im, coords[resized_images.index(im)])
 
     # Add brand logo smaller
-    logo_im = Image.open('/Users/MN1/shopcode/love-bonito-logo.png').convert("RGBA")
+    logo_im = Image.open(img_config.LB_THIN_LOGO).convert("RGBA")
     logo_im = logo_im.resize((400, 200))
 
     # Paste logo on botom left
