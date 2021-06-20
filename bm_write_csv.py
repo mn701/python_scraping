@@ -8,8 +8,8 @@ from classes.utilities import *
 
 AREA_CODE = 2002005
 COURIER = 677239
-CK_SHOP = 'Charles&Keith直営店'
-PW_SHOP = 'Pedro直営店'
+BM_BRAND_ID = {1:827, 2:13301, 3:10037 }
+SHOPS = {1:'Charles&Keith直営店', 2:'Pedro直営店', 3:'Love,Bonito直営店' }
 
 def get_lst19(item_id):
     dbc = DBHelper()
@@ -65,7 +65,8 @@ def create_new_colorsizes():
     rows = dbc.fetchall(sql)
 
     with open('csv/new/colorsizes.csv', 'w', newline='') as file:
-        fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', '幅', '高さ', 'マチ', '縦', '横', '厚み']
+        fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', \
+        '幅', '高さ', 'マチ', '縦', '横', '厚み', '着丈', '胸囲', 'ウエスト', 'ヒップ']
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
@@ -76,7 +77,12 @@ def create_new_colorsizes():
             if row['size_info'] != None:
                 dict_size_info = json.loads(row['size_info'])
 
-            if row['category'] == 3169 or row['category'] == 3111:
+            if row['category'] == 3040:
+                new_variation['着丈'] = dict_size_info.get('Length')
+                new_variation['胸囲'] = dict_size_info.get('Bust')
+                new_variation['ウエスト'] = dict_size_info.get('Waist')
+                new_variation['ヒップ'] = dict_size_info.get('Hip')
+            elif row['category'] == 3169 or row['category'] == 3111:
                 new_variation['縦'] = dict_size_info.get('Height')
                 new_variation['横'] = dict_size_info.get('Width')
                 new_variation['厚み'] = dict_size_info.get('Depth')
@@ -119,15 +125,9 @@ def create_new_items():
         new_listing['購入期限'] = valid_till
 
         for row in rows:
-            if row['brand_id'] == 1:
-                new_listing['ブランド'] = 827
-                new_listing['買付ショップ'] = CK_SHOP
-                new_listing['買付先名1'] = CK_SHOP
-
-            elif row['brand_id'] == 2:
-                new_listing['ブランド'] = 13301
-                new_listing['買付ショップ'] = PW_SHOP
-                new_listing['買付先名1'] = PW_SHOP
+            new_listing['ブランド'] = BM_BRAND_ID[row['brand_id']]
+            new_listing['買付ショップ'] = SHOPS[row['brand_id']]
+            new_listing['買付先名1'] = SHOPS[row['brand_id']]
 
             new_listing['商品管理番号'] = row['item_id']
             new_listing['商品名'] = row['listed_name']
