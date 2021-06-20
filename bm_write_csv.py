@@ -4,6 +4,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 import os
 import json
+import re
 from classes.utilities import *
 
 AREA_CODE = 2002005
@@ -78,10 +79,10 @@ def create_new_colorsizes():
                 dict_size_info = json.loads(row['size_info'])
 
             if row['category'] == 3040:
-                new_variation['着丈'] = dict_size_info.get('Length')
-                new_variation['胸囲'] = dict_size_info.get('Bust')
-                new_variation['ウエスト'] = dict_size_info.get('Waist')
-                new_variation['ヒップ'] = dict_size_info.get('Hip')
+                new_variation['着丈'] = re.sub('-', '', dict_size_info.get('Length'))
+                new_variation['胸囲'] = re.sub('-', '', dict_size_info.get('Bust'))
+                new_variation['ウエスト'] = re.sub('-', '', dict_size_info.get('Waist'))
+                new_variation['ヒップ'] = re.sub('-', '', dict_size_info.get('Hip'))
             elif row['category'] == 3169 or row['category'] == 3111:
                 new_variation['縦'] = dict_size_info.get('Height')
                 new_variation['横'] = dict_size_info.get('Width')
