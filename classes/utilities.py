@@ -133,7 +133,7 @@ class DBHelper:
             except IndexError:
                 logging.error("Check img name: " + url)
             if img_name:
-                sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "'"
+                sql = "SELECT img_name FROM Images WHERE img_name ='" + img_name + "' AND variation_id = " + variation_id
                 exist = self.fetchone(sql)
                 if exist is None:
                     sql =  "INSERT INTO Images(item_id, variation_id, img_name, img_url) VALUES \

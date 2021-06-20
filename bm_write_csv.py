@@ -14,16 +14,21 @@ SHOPS = {1:'Charles&Keith直営店', 2:'Pedro直営店', 3:'Love,Bonito直営店
 
 def get_lst19(item_id):
     dbc = DBHelper()
-    sql = ("SELECT id FROM variations where item_id = " + str(item_id) + " order by color_code")
+    sql = ("SELECT id, color_code FROM variations where item_id = " + str(item_id) + " order by lb_product, color_code")
     rows = dbc.fetchall(sql)
 
+    # print(rows)
+    var_ids = dict()
+
+    for row in rows:
+        if row['color_code'] not in var_ids.values():
+            var_ids[row['id']] = row['color_code']
     lst_urls = list()
     lst19 = list()
 
-    for row in rows:
-        variation_id = row['id']
+    for varid in var_ids.keys():
         lst_var = list()
-        sql = "SELECT * FROM Images where variation_id = " + str(variation_id) + " order by img_name"
+        sql = "SELECT * FROM Images where variation_id = " + str(varid) + " order by img_name"
         if(dbc.rowcount(sql) > 0):
             imgrows = dbc.fetchall(sql)
             for img in imgrows:
@@ -65,6 +70,10 @@ def create_new_colorsizes():
     Items.listed = 3 AND availability NOT IN ('Unavailable') AND is_listed IS NULL"
     rows = dbc.fetchall(sql)
 
+    if dbc.rowcount(sql) > 0:
+        csv_colorsizes_new(rows)
+
+def csv_colorsizes_new(rows):
     with open('csv/new/colorsizes.csv', 'w', newline='') as file:
         fieldnames = ['商品管理番号', '並び順', 'サイズ名称', 'サイズ単位', '検索用サイズ', '色名称', '色系統', '在庫ステータス', \
         '幅', '高さ', 'マチ', '縦', '横', '厚み', '着丈', '胸囲', 'ウエスト', 'ヒップ']
@@ -101,6 +110,10 @@ def create_new_items():
     WHERE listed = 3 AND Items.item_id = Listed_items.item_id"
     rows = dbc.fetchall(sql)
 
+    if dbc.rowcount(sql) > 0:
+        csv_items_new(rows)
+
+def csv_items_new(rows):
     with open('csv/new/items.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','商品管理番号','コントロール','商品名','ブランド','カテゴリ','シーズン','単価','買付可数量', \
         '購入期限','参考価格/通常出品価格', '商品コメント', '色サイズ補足', 'タグ', '配送方法', '買付エリア', '買付都市', '買付ショップ', \
@@ -248,7 +261,7 @@ def back_stock():
         AND Listed_items.item_id IN (" + strlst + ")"
         # print(sql)
         rows = dbc.fetchall(sql)
-        update_items(rows, 0)
+        csv_items_update(rows, 0)
 
 def items_to_be_updated():
     dbc = DBHelper()
@@ -256,9 +269,9 @@ def items_to_be_updated():
     sql = "SELECT Listed_items.*, Items.listed FROM Items, Listed_items \
     WHERE listed = 4 AND Items.item_id = Listed_items.item_id"
     rows = dbc.fetchall(sql)
-    update_items(rows, 1)
+    csv_items_update(rows, 1)
 
-def update_items(rows, with_img):
+def csv_items_update(rows, with_img):
     dbc = DBHelper()
     with open('csv/update/items.csv', 'w', newline='') as file:
         fieldnames = ['商品ID','商品管理番号','コントロール','商品名','単価','買付可数量','購入期限','参考価格/通常出品価格']
@@ -358,7 +371,35 @@ def new_all_unavailable():
     if len(items_cannot_list) > 0:
         items_to_be_retired(items_cannot_list)
 
+# prepare csv for both colorsizes and items
+def enter_item_new():
+    selected_item = input("Enter Item ID: ")
+    dbc = DBHelper()
+    sql = "SELECT Variations.*, Items.listed, Listed_items.category FROM Items, Variations, Listed_items \
+    WHERE Items.item_id = Variations.item_id AND Listed_items.item_id = Variations.item_id AND \
+    Items.item_id = " + selected_item
+    rows = dbc.fetchall(sql)
 
+    if dbc.rowcount(sql) > 0:
+        csv_colorsizes_new(rows)
+
+    sql = "SELECT Listed_items.*, Items.listed, Items.brand_id FROM Items, Listed_items \
+    WHERE Listed_items.item_id = Items.item_id AND Listed_items.item_id = " + selected_item
+    rows = dbc.fetchall(sql)
+
+    if dbc.rowcount(sql) > 0:
+        csv_items_new(rows)
+
+# update only Items
+def enter_item_update():
+    selected_item = input("Enter Item ID: ")
+    dbc = DBHelper()
+    sql = "SELECT Listed_items.*, Items.listed, Items.brand_id FROM Items, Listed_items \
+    WHERE Listed_items.item_id = Items.item_id AND Listed_items.item_id = " + selected_item
+    rows = dbc.fetchall(sql)
+
+    if dbc.rowcount(sql) > 0:
+        csv_items_update(rows, 1)
 
 def create_new():
     create_new_colorsizes()
