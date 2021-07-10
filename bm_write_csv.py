@@ -6,6 +6,7 @@ import os
 import json
 import re
 from classes.utilities import *
+import img_config
 
 AREA_CODE = 2002005
 COURIER = 677239
@@ -153,26 +154,28 @@ def csv_items_new(rows):
             new_listing['タグ'] = row['tags']
 
             lst19 = get_lst19(row['item_id'])
+            base = img_config.img_base_url
 
-            new_listing['商品イメージ1'] = lst19[0] if 0 < len(lst19) else None
-            new_listing['商品イメージ2'] = lst19[1] if 1 < len(lst19) else None
-            new_listing['商品イメージ3'] = lst19[2] if 2 < len(lst19) else None
-            new_listing['商品イメージ4'] = lst19[3] if 3 < len(lst19) else None
-            new_listing['商品イメージ5'] = lst19[4] if 4 < len(lst19) else None
-            new_listing['商品イメージ6'] = lst19[5] if 5 < len(lst19) else None
-            new_listing['商品イメージ7'] = lst19[6] if 6 < len(lst19) else None
-            new_listing['商品イメージ8'] = lst19[7] if 7 < len(lst19) else None
-            new_listing['商品イメージ9'] = lst19[8] if 8 < len(lst19) else None
-            new_listing['商品イメージ10'] = lst19[9] if 9 < len(lst19) else None
-            new_listing['商品イメージ11'] = lst19[10] if 10 < len(lst19) else None
-            new_listing['商品イメージ12'] = lst19[11] if 11 < len(lst19) else None
-            new_listing['商品イメージ13'] = lst19[12] if 12 < len(lst19) else None
-            new_listing['商品イメージ14'] = lst19[13] if 13 < len(lst19) else None
-            new_listing['商品イメージ15'] = lst19[14] if 14 < len(lst19) else None
-            new_listing['商品イメージ16'] = lst19[15] if 15 < len(lst19) else None
-            new_listing['商品イメージ17'] = lst19[16] if 16 < len(lst19) else None
-            new_listing['商品イメージ18'] = lst19[17] if 17 < len(lst19) else None
-            new_listing['商品イメージ19'] = lst19[18] if 18 < len(lst19) else None
+            new_listing['商品イメージ1'] = base + str(row['item_id']) + '.png'
+            new_listing['商品イメージ2'] = lst19[0] if 0 < len(lst19) else None
+            new_listing['商品イメージ3'] = lst19[1] if 1 < len(lst19) else None
+            new_listing['商品イメージ4'] = lst19[2] if 2 < len(lst19) else None
+            new_listing['商品イメージ5'] = lst19[3] if 3 < len(lst19) else None
+            new_listing['商品イメージ6'] = lst19[4] if 4 < len(lst19) else None
+            new_listing['商品イメージ7'] = lst19[5] if 5 < len(lst19) else None
+            new_listing['商品イメージ8'] = lst19[6] if 6 < len(lst19) else None
+            new_listing['商品イメージ9'] = lst19[7] if 7 < len(lst19) else None
+            new_listing['商品イメージ10'] = lst19[8] if 8 < len(lst19) else None
+            new_listing['商品イメージ11'] = lst19[9] if 9 < len(lst19) else None
+            new_listing['商品イメージ12'] = lst19[10] if 10 < len(lst19) else None
+            new_listing['商品イメージ13'] = lst19[11] if 11 < len(lst19) else None
+            new_listing['商品イメージ14'] = lst19[12] if 12 < len(lst19) else None
+            new_listing['商品イメージ15'] = lst19[13] if 13 < len(lst19) else None
+            new_listing['商品イメージ16'] = lst19[14] if 14 < len(lst19) else None
+            new_listing['商品イメージ17'] = lst19[15] if 15 < len(lst19) else None
+            new_listing['商品イメージ18'] = lst19[16] if 16 < len(lst19) else None
+            new_listing['商品イメージ19'] = lst19[17] if 17 < len(lst19) else None
+            new_listing['商品イメージ20'] = lst19[18] if 18 < len(lst19) else None
 
             writer.writerow(new_listing)
 
@@ -301,26 +304,28 @@ def csv_items_update(rows, with_img):
 
             if with_img == 1:
                 lst19 = get_lst19(row['item_id'])
-
                 item_update['商品イメージ1'] = lst19[0] if 0 < len(lst19) else None
-                item_update['商品イメージ2'] = lst19[1] if 1 < len(lst19) else None
-                item_update['商品イメージ3'] = lst19[2] if 2 < len(lst19) else None
-                item_update['商品イメージ4'] = lst19[3] if 3 < len(lst19) else None
-                item_update['商品イメージ5'] = lst19[4] if 4 < len(lst19) else None
-                item_update['商品イメージ6'] = lst19[5] if 5 < len(lst19) else None
-                item_update['商品イメージ7'] = lst19[6] if 6 < len(lst19) else None
-                item_update['商品イメージ8'] = lst19[7] if 7 < len(lst19) else None
-                item_update['商品イメージ9'] = lst19[8] if 8 < len(lst19) else None
-                item_update['商品イメージ10'] = lst19[9] if 9 < len(lst19) else None
-                item_update['商品イメージ11'] = lst19[10] if 10 < len(lst19) else None
-                item_update['商品イメージ12'] = lst19[11] if 11 < len(lst19) else None
-                item_update['商品イメージ13'] = lst19[12] if 12 < len(lst19) else None
-                item_update['商品イメージ14'] = lst19[13] if 13 < len(lst19) else None
-                item_update['商品イメージ15'] = lst19[14] if 14 < len(lst19) else None
-                item_update['商品イメージ16'] = lst19[15] if 15 < len(lst19) else None
-                item_update['商品イメージ17'] = lst19[16] if 16 < len(lst19) else None
-                item_update['商品イメージ18'] = lst19[17] if 17 < len(lst19) else None
-                item_update['商品イメージ19'] = lst19[18] if 18 < len(lst19) else None
+                if len(row['item_image_1']) > 0:
+                    item_update['商品イメージ1'] = row['item_image_1']
+                item_update['商品イメージ2'] = lst19[0] if 0 < len(lst19) else None
+                item_update['商品イメージ3'] = lst19[1] if 1 < len(lst19) else None
+                item_update['商品イメージ4'] = lst19[2] if 2 < len(lst19) else None
+                item_update['商品イメージ5'] = lst19[3] if 3 < len(lst19) else None
+                item_update['商品イメージ6'] = lst19[4] if 4 < len(lst19) else None
+                item_update['商品イメージ7'] = lst19[5] if 5 < len(lst19) else None
+                item_update['商品イメージ8'] = lst19[6] if 6 < len(lst19) else None
+                item_update['商品イメージ9'] = lst19[7] if 7 < len(lst19) else None
+                item_update['商品イメージ10'] = lst19[8] if 8 < len(lst19) else None
+                item_update['商品イメージ11'] = lst19[9] if 9 < len(lst19) else None
+                item_update['商品イメージ12'] = lst19[10] if 10 < len(lst19) else None
+                item_update['商品イメージ13'] = lst19[11] if 11 < len(lst19) else None
+                item_update['商品イメージ14'] = lst19[12] if 12 < len(lst19) else None
+                item_update['商品イメージ15'] = lst19[13] if 13 < len(lst19) else None
+                item_update['商品イメージ16'] = lst19[14] if 14 < len(lst19) else None
+                item_update['商品イメージ17'] = lst19[15] if 15 < len(lst19) else None
+                item_update['商品イメージ18'] = lst19[16] if 16 < len(lst19) else None
+                item_update['商品イメージ19'] = lst19[17] if 17 < len(lst19) else None
+                item_update['商品イメージ20'] = lst19[18] if 18 < len(lst19) else None
 
             writer.writerow(item_update)
 

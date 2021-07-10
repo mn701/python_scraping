@@ -13,8 +13,9 @@ rows = dbc.fetchall(sql)
 for row in rows:
     item_id_str = str(row['item_id'])
     col_name = row['bm_col_name']
+    size_name = row['size_name']
     try:
-        selected_variation = df.loc[(df['商品管理番号'] == item_id_str) & (df['色名称'] == col_name)]
+        selected_variation = df.loc[(df['商品管理番号'] == item_id_str) & (df['色名称'] == col_name) & (df['サイズ名称'] == size_name)]
         new_stock = selected_variation['在庫ステータス'].values[0]
         order = selected_variation['並び順'].values[0]
         sql = "UPDATE variations SET has_stock = '" + new_stock + "', bm_order = '" + str(order) + \
@@ -49,6 +50,7 @@ for row in rows:
         season = selected_item['シーズン'].values[0]
         tags = selected_item['タグ'].values[0]
         supplier = selected_item['買付ショップ'].values[0]
+        item_image_1 = selected_item['商品イメージ1'].values[0]
 
         if bm_id != row['buyma_id']:
             sql = "UPDATE Listed_items SET buyma_id = '" + str(bm_id) + "', "\
@@ -60,7 +62,8 @@ for row in rows:
                 + "category = '" + str(category) + "', "\
                 + "season = '" + str(season) + "', "\
                 + "tags = '" + str(tags) + "', "\
-                + "supplier = '" + supplier + "' "\
+                + "supplier = '" + supplier + "', "\
+                + "item_image_1 = '" + item_image_1 + "' "\
                 + " WHERE id = " + str(row['id'])
             dbc.execute(sql)
 

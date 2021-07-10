@@ -14,7 +14,8 @@ logging
 log_format = '%(asctime)s %(filename)s: %(message)s'
 logging.basicConfig(filename='log/crawling.log', level=logging.DEBUG, format=log_format)
 
-sql = "SELECT id, url FROM variations where has_stock = 1"
+sql = "SELECT id, variations.url FROM variations, items where has_stock = 1 and \
+    items.item_id = variations.item_id and items.brand_id in (1, 2)"
 rows = dbc.fetchall(sql)
 print(dbc.rowcount(sql))
 for row in rows:

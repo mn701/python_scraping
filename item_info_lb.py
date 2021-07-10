@@ -224,10 +224,10 @@ def get_items_from_list(lst, brand_id):
             dbc.insert_item(item)
             fetch_other_buyers(item)
 
-        item_variations = getVariationInfo(url)
-        if item_variations != None:
-            for var in item_variations:
-                dbc.insert_lb_variation(var)
+            item_variations = getVariationInfo(url)
+            if item_variations != None:
+                for var in item_variations:
+                    dbc.insert_lb_variation(var)
 
 # takes one URL and return multiple item URLs it contains
 def get_lb_urls(url):
@@ -255,9 +255,8 @@ def item_lb():
     # brand_id
     LB_ID = '3'
 
-    # fetch Pedro items
-    html = urlopen("https://www.lovebonito.com/sg/women/category/dresses")
-    bsObj = BeautifulSoup(html, 'lxml')
+    crawler = Crawler()
+    bsObj = crawler.getPage("https://www.lovebonito.com/sg/women/category/dresses")
     res_cont_div = bsObj.find('p', {"class":"product-count"}).string.strip()
     res_cont = int(re.sub(r'[^0-9]+', '', res_cont_div))
     print(res_cont)
