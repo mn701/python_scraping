@@ -46,6 +46,6 @@ for row in rows:
             if size_span:
                 size = crawler.safeGet(bsObj, 'span.size-value')
 
-        id = str(row['id'])
-        sql = "UPDATE variations SET availability = '" + txt_availability + "' WHERE id = '" + id + "'"
-        dbc.execute(sql)
+    id = str(row['id'])
+    sql = "UPDATE variations SET availability = '" + txt_availability + "' WHERE id = '" + id + "'"
+    dbc.execute(sql)
